@@ -1,0 +1,38 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DianMatrix", "DianMatrix.vcproj", "{D2AD2205-A9D8-3E48-9E92-2A1B96A71FD0}"
+	ProjectSection(ProjectDependencies) = postProject
+		{8658098E-711E-3CB7-9A74-12AD927AA934} = {8658098E-711E-3CB7-9A74-12AD927AA934}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dian_matrix_lib", "dian_matrix_lib.vcproj", "{8658098E-711E-3CB7-9A74-12AD927AA934}"
+	ProjectSection(ProjectDependencies) = postProject
+		{682AE6F5-99E8-3C0D-A0F9-C6CA65D73A73} = {682AE6F5-99E8-3C0D-A0F9-C6CA65D73A73}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "QSerialDevice", "QSerialDevice.vcproj", "{682AE6F5-99E8-3C0D-A0F9-C6CA65D73A73}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D2AD2205-A9D8-3E48-9E92-2A1B96A71FD0}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D2AD2205-A9D8-3E48-9E92-2A1B96A71FD0}.Debug|Win32.Build.0 = Debug|Win32
+		{D2AD2205-A9D8-3E48-9E92-2A1B96A71FD0}.Release|Win32.ActiveCfg = Release|Win32
+		{D2AD2205-A9D8-3E48-9E92-2A1B96A71FD0}.Release|Win32.Build.0 = Release|Win32
+		{8658098E-711E-3CB7-9A74-12AD927AA934}.Debug|Win32.ActiveCfg = Debug|Win32
+		{8658098E-711E-3CB7-9A74-12AD927AA934}.Debug|Win32.Build.0 = Debug|Win32
+		{8658098E-711E-3CB7-9A74-12AD927AA934}.Release|Win32.ActiveCfg = Release|Win32
+		{8658098E-711E-3CB7-9A74-12AD927AA934}.Release|Win32.Build.0 = Release|Win32
+		{682AE6F5-99E8-3C0D-A0F9-C6CA65D73A73}.Debug|Win32.ActiveCfg = Debug|Win32
+		{682AE6F5-99E8-3C0D-A0F9-C6CA65D73A73}.Debug|Win32.Build.0 = Debug|Win32
+		{682AE6F5-99E8-3C0D-A0F9-C6CA65D73A73}.Release|Win32.ActiveCfg = Release|Win32
+		{682AE6F5-99E8-3C0D-A0F9-C6CA65D73A73}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
