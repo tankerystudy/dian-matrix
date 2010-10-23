@@ -1,12 +1,5 @@
-#define IN 
-#define INOUT
-#define OUT
-
-#define LED_LINE  16
-#define LED_ROW   8
-
-typedef unsigned char uchar;
-typedef uchar byte;
+#include <reg52.h>
+#include "graphics_driver.h"
 
 /* 全局变量定义 */
 /* 显示相关IO口定义 */
@@ -100,7 +93,7 @@ void led_drv_InterfaceMap(INOUT byte *bData)
     while (8 > i)
     {
         tempdata[i] = (bit) (((*bData) & data) >> i);
-        data <<= 2;
+        data <<= 1;
         i++;
     }
 
