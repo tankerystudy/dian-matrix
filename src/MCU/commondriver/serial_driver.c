@@ -5,7 +5,7 @@
 #define SERIAL_MODE_DOWNLOAD    1
 
 static byte *MatrixBuf;
-int BufCursor = 0;
+int g_BufCursor = 0;
 
 
 void SerialSendChar(byte ucChar)
@@ -53,7 +53,7 @@ void SerialRecv(void) interrupt 4 using 3
 
 byte SerialRead(byte *Buffer, byte BufLen)
 {
-    if (BufCursor < BufLen)
+    if (g_BufCursor < BufLen)
     {
         return -1;
     }
@@ -64,7 +64,7 @@ byte SerialRead(byte *Buffer, byte BufLen)
 }
 
 
-byte SerialWrite(byte *BufCursor, byte BufLen)
+byte SerialWrite(byte BufLen)
 {
     byte *p;
     p=&pucString;
@@ -84,19 +84,35 @@ byte SerialWrite(byte *BufCursor, byte BufLen)
 
 void SerialModeSelect(bit Mode)
 {
-    if (SERIAL_MODE_DISP== Mode)
+    if (SERIAL_MODE_DISP == Mode)
     {
         SCON = 0x10;
-        TI = 0;
-        RI = 0;
-        ES = 1;
-    }
+	}
     else
     {
         SCON = 0x50;
-        TI = 0;
-        RI = 0;
-        ES = 1;
     }
+	TI = 0;
+	RI = 0;
+	ES = 1;
+}
+
+void Timer2Init()
+{
+	PCON = 0x00;
+    T2MOD = 0X00;
+    T2CON = 0x30;
+   
+    RCAP2H = 0xff;
+    RCAP2L = 0xd9;
+    
+    TH2 = 0xff;
+    TL2 = 0xd9;
+}
+
+void SerialInit()
+{
+	SerialModeSelect(SERIAL_MODE_DOWNLOAD);
+	Timer2Init();
 }
 
