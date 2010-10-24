@@ -30,7 +30,7 @@ enum Mode   {                   /* 模式种类 */
 };
 
 
-byte graphData[8][16];          /* 显存数据 */
+byte graphData[128];            /* 显存数据 */
 enum Mode currentMode;          /* 当前模式 */
 bit isEditing;                  /* 是否正在修改状态 */
 bit needUpdate;                 /* 标志是否需要更新 */
@@ -86,6 +86,7 @@ void OnTimer()
     {
         reTCount= TIME_REFRESH/TIME_TIMER;
         /* 调用显卡驱动的刷新行函数 */
+        GDI_Refresh();
     }
     if (--ksTCount == 0)
     {
@@ -289,6 +290,7 @@ void main()
 {
     /* 调用本模块初始化函数 */
     /* 初始化显卡驱动 */
+    void GDI_Init(graphData);
     /* 初始化时间管理模块 */
 
     while (1)

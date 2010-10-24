@@ -29,10 +29,10 @@ unix {
 }
 
 # Input
-HEADERS     += DataManager.h LEDScrn.h matrixCreator.h \
+HEADERS     += DataManager.h ledPainter.h LEDScrn.h matrixCreator.h \
                 serialDownloader.h matrixDlg.h QtDianMatrix.h
 FORMS       += MatrixDlg.ui
-SOURCES     += DataManager.cpp LEDScrn.cpp matrixCreator.cpp \
+SOURCES     += DataManager.cpp ledPainter.cpp LEDScrn.cpp matrixCreator.cpp \
                 serialDownloader.cpp matrixDlg.cpp QtDianMatrix.cpp
 
 

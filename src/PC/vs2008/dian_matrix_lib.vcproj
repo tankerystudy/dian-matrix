@@ -179,6 +179,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\dian_matrix_lib\ledPainter.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\dian_matrix_lib\LEDScrn.cpp"
 				>
 			</File>
@@ -229,6 +233,10 @@
 						Outputs=""
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\dian_matrix_lib\ledPainter.h"
+				>
 			</File>
 			<File
 				RelativePath="..\dian_matrix_lib\LEDScrn.h"

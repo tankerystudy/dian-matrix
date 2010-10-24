@@ -46,6 +46,8 @@
  *          // 01000000 00000000
  *          // then you can use read to get those data.
  *      }
+ *  Copyleft@2010, Coogle, Dian group
+ *      tankery.chen@gmail.com
  ********************************************************/
 #ifndef Tankery_DATA_MANAGER_H
 #define Tankery_DATA_MANAGER_H

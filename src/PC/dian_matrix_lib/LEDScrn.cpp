@@ -2,6 +2,7 @@
 
 #include "LEDScrn.h"
 #include "DataManager.h"
+#include "ledPainter.h"
 
 QLEDScrn::QLEDScrn(DataManager *data, QWidget *parent/*= 0*/)
 : QWidget(parent)
@@ -17,6 +18,11 @@ QLEDScrn::~QLEDScrn(void)
 
 void QLEDScrn::paintEvent(QPaintEvent * /*event*/)
 {
+
+    LedPainter *shape= new LedPainter(matrixData);
+    shape->DrawRect(GraphVector(0,0), GraphVector(64, 16), LedPainter::PM_XOR);
+    shape->DrawCursor(GraphVector(20, 10), 3, LedPainter::PM_XOR);
+
     QPainter painter(this);
 
     float xSpace= (float)width()/LED_MATRIX_X_COUNT;
