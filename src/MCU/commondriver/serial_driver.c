@@ -1,13 +1,9 @@
-#define SBUF_MAX_LENGTH     128
-#define byte               unsigned char
+#include "Serial_driver.h"
 
-#define SERIAL_MODE_DISP        0
-#define SERIAL_MODE_DOWNLOAD    1
-
-static byte *MatrixBuf;
-int g_BufCursor = 0;
+/* definition of functions declared in Serial_driver.h */
 
 
+/* send a charactor to SBUF */
 void SerialSendChar(byte ucChar)
 {
     TI = 0;
@@ -17,7 +13,7 @@ void SerialSendChar(byte ucChar)
     TI = 0;                         /* close the transmit interrupt */
 }
 
-
+/* Send a string to SBUF */
 void SerialSendStr(byte *pucString) 
 {
     byte ucStrlen;
@@ -37,7 +33,7 @@ void SerialSendStr(byte *pucString)
     }
 }
 
-
+/* receive data from SBUF */
 void SerialRecv(void) interrupt 4 using 3
 {
     if (RI)                         /* if receive interrupt is triggered */
@@ -49,6 +45,7 @@ void SerialRecv(void) interrupt 4 using 3
         ES = 1;
     }
 }
+
 
 
 byte SerialRead(byte *Buffer, byte BufLen)
@@ -81,7 +78,7 @@ byte SerialWrite(byte BufLen)
     }    
 }
 
-
+/* select mode for serial */
 void SerialModeSelect(bit Mode)
 {
     if (SERIAL_MODE_DISP == Mode)
@@ -97,6 +94,7 @@ void SerialModeSelect(bit Mode)
 	ES = 1;
 }
 
+/* initialization of Timer2 */
 void Timer2Init()
 {
 	PCON = 0x00;
@@ -110,7 +108,9 @@ void Timer2Init()
     TL2 = 0xd9;
 }
 
+/* initialization of Serial */
 void SerialInit()
+
 {
 	SerialModeSelect(SERIAL_MODE_DOWNLOAD);
 	Timer2Init();
