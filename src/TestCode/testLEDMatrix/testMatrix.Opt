@@ -11,10 +11,10 @@
  DaveTm { 0,0,0,0,0,0,0,0 }
 
 Target (Target 1), 0x0000 // Tools: 'MCS-51'
-GRPOPT 1,(Source Group 1),0,0,0
+GRPOPT 1,(Source Group 1),1,0,0
 
 OPTFFF 1,1,2,0,0,0,0,0,<.\STARTUP.A51><STARTUP.A51> 
-OPTFFF 1,2,1,0,0,0,0,0,<.\testMatrix.c><testMatrix.c> 
+OPTFFF 1,2,1,369098754,0,1,9,0,<.\testMatrix.c><testMatrix.c> { 44,0,0,0,2,0,0,0,3,0,0,0,255,255,255,255,255,255,255,255,252,255,255,255,226,255,255,255,0,0,0,0,0,0,0,0,1,4,0,0,168,1,0,0 }
 
 
 TARGOPT 1, (Target 1)
@@ -25,7 +25,7 @@ TARGOPT 1, (Target 1)
   OPTOX 16
   OPTLT 1,1,1,0,1,1,0,1,0,0,0,0
   OPTXL 1,1,1,1,1,1,1,0,0
-  OPTFL 0,0,1
+  OPTFL 1,0,1
   OPTDL (S8051.DLL)()(DP51.DLL)(-pAT52)(S8051.DLL)()(TP51.DLL)(-pAT52)
   OPTDBG 44029,0,()()()()()()()()()() ()()()()
   OPTDF 0x0
