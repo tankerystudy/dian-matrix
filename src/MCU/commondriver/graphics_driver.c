@@ -1,5 +1,6 @@
 #include <reg52.h>
 #include "graphics_driver.h"
+#include "serial_driver.h"
 
 /* 全局变量定义 */
 /* 显示相关IO口定义 */
@@ -54,6 +55,7 @@ void led_drv_DisInit(byte *pbGraphMem, byte bGraphLen)
 
     /* 4.设置串口模式0，用于传送数据。 */
     /* 调用串口驱动的接口 */
+    SerialModeSelect(SERIAL_MODE_DISP);
 
     return;
 }
@@ -199,6 +201,13 @@ void SetCurrentLine(IN uchar iCurrentLine)
     LINE_C= (iCurrentLine % 8) / 4;
     LINE_B= (iCurrentLine % 4) / 2;
     LINE_A= iCurrentLine % 2; 
+
+/*  
+    LINE_A = (iCurrentLine & 1) ? 1 : 0;
+    LINE_B = (iCurrentLine & 2) ? 1 : 0;
+    LINE_C = (iCurrentLine & 4) ? 1 : 0;
+    LINE_D = (iCurrentLine & 8) ? 1 : 0;
+*/
 
     return;
 }

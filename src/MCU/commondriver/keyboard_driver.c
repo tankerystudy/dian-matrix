@@ -16,9 +16,9 @@ byte ucHighTime;
 byte ucLowTime;
 byte ucHighTimeBefore;
 
-int CheckState();
-void JudgeNoChange();
-void JudgeChange();
+static int CheckState();
+static void JudgeNoChange();
+static void JudgeChange();
 
 
 /***************************************************************
@@ -40,11 +40,11 @@ void JudgeDec()
     return;
 }
 /***************************************************************
-Function:JudgeDec()
+Function:JudgeNoChange()
 Discription:Every time we find that the former key and the 
             current key are the same, we get in this function.
 ***************************************************************/
-void JudgeNoChange()
+static void JudgeNoChange()
 {
     //relax
     if(ucCBtn == KEY_NULL)
@@ -89,11 +89,11 @@ void JudgeNoChange()
 
 
 /***************************************************************
-Function:JudgeDec()
+Function:JudgeChange()
 Discription:Every time we find that the former key and the 
             current key are the same, we get in this function.
 ***************************************************************/
-void JudgeChange()
+static void JudgeChange()
 {
     bit bTempInDoubleClick;
     if(ucCBtn == KEY_NULL)
@@ -138,17 +138,17 @@ void JudgeChange()
 }
 
 /***************************************************************
-Function:   JudgeDec()
+Function:   CheckState()
 Discription:This function is used to check the button pressed 
 Output:     The number of the pressed button ( 1 - 7 )
             return 0 means nothing pressed
 ***************************************************************/
-int CheckState()
+static int CheckState()
 {
     /* set the button pressed before */
     ucBBtn = ucCBtn;
 
-    switch (P0 | 0x7F)  /* get the low 7 bits of P0 */
+    switch (P0 | 0x80)  /* get the low 7 bits of P0 */
     {
         case 0xFD:  /* S1 */
             ucCBtn = KEY_LEFT;
