@@ -4,8 +4,10 @@
 // the I2C communication package, implement like file operations.
 #include "commonDef.h"
 
-#define I2CREAD     0x01    // 0000 0001b
-#define I2CPAGE1    0x02    // 0000 0010b
+enum {
+    I2CREAD= 0x01,      // 0000 0001b
+    I2CPAGE1= 0x02      // 0000 0010b
+};
 
 // open EEPROM at memAddr with specific mode
 // default mode is: WRITE, PAGE0, ADDR00

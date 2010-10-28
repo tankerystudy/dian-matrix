@@ -1,46 +1,21 @@
 #include "Serial_driver.h"
 
 /* definition of functions declared in Serial_driver.h */
+static byte *g_MatrixBuf;
+int g_BufCursor;
 
-
-/* send a charactor to SBUF */
-void SerialSendChar(byte ucChar)
-{
-    TI = 0;
-    SBUF = ucChar;
-    while (TI == 0)                 /* wait for transmit interrupt */  
-        ;                           /* do nothing */
-    TI = 0;                         /* close the transmit interrupt */
-}
-
-/* Send a string to SBUF */
-void SerialSendStr(byte *pucString) 
-{
-    byte ucStrlen;
-    byte *p;
-    p=&pucString;
-    ucStrlen = strlen(pucString);
-
-    SBUF = *p;
-    
-    if (TI)                         /* if transmit interrupt is triggered */
-    {
-        TI = 0;
-        if (ucStrlen > p++)
-        {
-            SBUF = *p;
-        }
-    }
-}
 
 /* receive data from SBUF */
 void SerialRecv(void) interrupt 4 using 3
 {
+    /* memory full, return */
+    if (g_BufCursor = SBUF_MAX_LENGTH)
+        return;
+
     if (RI)                         /* if receive interrupt is triggered */
     {
         ES = 0;                     /* close the Serial Port interrupt */
-//      MatrixBuf[BufCursor/16][BufCursor%16] = SBUF;           /* copy the SBUF content to our own buff */
-        MatrixBuf[BufCursor++] = SBUF;
+        *(g_MatrixBuf + (g_BufCursor++)) = SBUF;
         RI = 0;                     /* close the receive interrupt */
         ES = 1;
     }
@@ -50,69 +25,55 @@ void SerialRecv(void) interrupt 4 using 3
 
 byte SerialRead(byte *Buffer, byte BufLen)
 {
-    if (g_BufCursor < BufLen)
+    /* if the memory not full or the BufLen is too short */
+    if (g_BufCursor < SBUF_MAX_LENGTH || BufLen < g_BufCursor)
     {
         return -1;
     }
-    else
-    {
-        Buffer = MatrixBuf;
-    }   
+
+    Buffer = g_MatrixBuf;
+    return SBUF_MAX_LENGTH;
 }
 
-
-byte SerialWrite(byte BufLen)
+/* Send a string to SBUF */
+void SerialWrite(byte *pucString, byte ucLen) 
 {
-    byte *p;
-    p=&pucString;
+    byte ucStrlen= ucLen;
+    byte *p= pucString;
 
     SBUF = *p;
     
     if (TI)                         /* if transmit interrupt is triggered */
     {
         TI = 0;
-        if (BufLen> p++)
+        while (ucStrlen > p++)
         {
-            SBUF = *p;
+            SBUF = ucChar;
+            while (TI == 0)         /* wait for transmit interrupt */  
+                ;                   /* do nothing */
         }
-    }    
-}
-
-/* select mode for serial */
-void SerialModeSelect(bit Mode)
-{
-    if (SERIAL_MODE_DISP == Mode)
-    {
-        SCON = 0x10;
-	}
-    else
-    {
-        SCON = 0x50;
     }
-	TI = 0;
-	RI = 0;
-	ES = 1;
-}
-
-/* initialization of Timer2 */
-void Timer2Init()
-{
-	PCON = 0x00;
-    T2MOD = 0X00;
-    T2CON = 0x30;
-   
-    RCAP2H = 0xff;
-    RCAP2L = 0xd9;
-    
-    TH2 = 0xff;
-    TL2 = 0xd9;
 }
 
 /* initialization of Serial */
-void SerialInit()
-
+void SerialInit(byte *pucSerialMem, bit isMode0)
 {
-	SerialModeSelect(SERIAL_MODE_DOWNLOAD);
-	Timer2Init();
+    g_MatrixBuf= pucSerialMem;
+    g_BufCursor = 0;
+
+    if (isMode0)
+    {
+        SCON = 0x10;
+    }
+    else
+    {
+        SCON = 0x50;        // UART is mode 1, 8 bit data, allow receive
+        RCAP2 = 0xFFD9;     // Set the original start time
+        IE |= 0x90;         // Enable Serial Interrupt
+        T2CON = 0x34;       // timer 2 run
+        ES = 1;
+    }
+    TI = 0;
+    RI = 0;
 }
 
