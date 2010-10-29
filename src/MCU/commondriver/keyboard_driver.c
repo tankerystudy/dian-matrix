@@ -1,4 +1,5 @@
 #include <reg52.h>
+#include "common_def.h"
 #include "keyboard_driver.h"
 
 
@@ -172,10 +173,10 @@ static int CheckState()
             ucCBtn = KEY_NO;
             break;
         default:  /* no button clicked */
+            ucCBtn = KEY_NULL;
             break;
     }
-
-    ucCBtn = KEY_NULL;
+    
     return 0;
 }
 

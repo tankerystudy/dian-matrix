@@ -1,3 +1,4 @@
+#include <reg52.h>
 #include "Serial_driver.h"
 
 /* definition of functions declared in Serial_driver.h */

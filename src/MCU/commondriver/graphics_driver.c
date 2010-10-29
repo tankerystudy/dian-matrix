@@ -1,6 +1,7 @@
 #include <reg52.h>
+#include "common_def.h"
 #include "graphics_driver.h"
-#include "serial_driver.h"
+//#include "serial_driver.h"
 
 /* 全局变量定义 */
 /* 显示相关IO口定义 */
@@ -18,6 +19,9 @@ static byte g_bGraphLen;
 /* 当前显示的行数 */
 uchar g_ucCurrentLine;
 uchar g_ucCurrentRowLed;
+
+void led_drv_LineRefresh(byte *bData, uchar iCurrentLine);
+void SetCurrentLine(uchar iCurrentLine);
 
 
 /* 显卡驱动 */
@@ -41,7 +45,7 @@ uchar g_ucCurrentRowLed;
   YYYY-MM-DD
 
 *******************************************************************************/
-void led_drv_DisInit(byte *pbGraphMem, byte bGraphLen)
+void led_drv_DisInit(byte pbGraphMem[])
 {
     /* 1.使能74HC38。 */
     LINE_EN = 0;    /* 低电平使能 */
@@ -51,11 +55,11 @@ void led_drv_DisInit(byte *pbGraphMem, byte bGraphLen)
 
     /* 3.获取显存。 */
     g_bGraphMem = pbGraphMem;
-    g_bGraphLen = bGraphLen;
+    //g_bGraphLen = bGraphLen;
 
     /* 4.设置串口模式0，用于传送数据。 */
     /* 调用串口驱动的接口 */
-    SerialModeSelect(SERIAL_MODE_DISP);
+    //SerialModeSelect(SERIAL_MODE_DISP);
 
     return;
 }
@@ -85,7 +89,7 @@ void led_drv_DisInit(byte *pbGraphMem, byte bGraphLen)
   YYYY-MM-DD
 
 *******************************************************************************/
-void led_drv_InterfaceMap(INOUT byte *bData)
+/*void led_drv_InterfaceMap(byte *bData)
 {
     bit temp[8];
     bit tempdata[8];
@@ -99,7 +103,7 @@ void led_drv_InterfaceMap(INOUT byte *bData)
         i++;
     }
 
-    /* 按照接口关系映射表进行映射 */
+    /* 按照接口关系映射表进行映射 
     temp[0] = tempdata[1];
     temp[1] = tempdata[3];
     temp[2] = tempdata[0];
@@ -109,7 +113,7 @@ void led_drv_InterfaceMap(INOUT byte *bData)
     temp[6] = tempdata[5];
     temp[7] = tempdata[2];
 
-    /* 将8bits转换成1byte */
+    /* 将8bits转换成1byte 
     i = 0;
     while (8 > i)
     {
@@ -118,6 +122,9 @@ void led_drv_InterfaceMap(INOUT byte *bData)
     }
 
     return;
+}*/
+void led_drv_InterfaceMap(byte *bData)
+{
 }
 
 /*******************************************************************************
@@ -139,7 +146,7 @@ void led_drv_InterfaceMap(INOUT byte *bData)
 void led_drv_Refresh(void)
 {
     /* 刷新一行 */
-    led_drv_LineRefresh(g_bGraphMem[g_ucCurrentLine], g_ucCurrentLine);
+    led_drv_LineRefresh((g_bGraphMem + g_ucCurrentLine * 8), g_ucCurrentLine);
 
     /* 更新当前行 */
     g_ucCurrentLine++;
@@ -168,13 +175,13 @@ void led_drv_Refresh(void)
   YYYY-MM-DD
 
 *******************************************************************************/
-void led_drv_LineRefresh(IN byte *bData,IN uchar iCurrentLine)
+void led_drv_LineRefresh(byte *bData, uchar iCurrentLine)
 {
     /* 行选 */
     SetCurrentLine(iCurrentLine);
 
     /* 通过串口发送数据到74HC595 */
-    SerialSendStr(bData);
+    //SerialSendStr(bData);
 
     return;
 }
@@ -195,7 +202,7 @@ void led_drv_LineRefresh(IN byte *bData,IN uchar iCurrentLine)
   YYYY-MM-DD
 
 *******************************************************************************/
-void SetCurrentLine(IN uchar iCurrentLine)
+void SetCurrentLine(uchar iCurrentLine)
 {
     LINE_D= iCurrentLine / 8;
     LINE_C= (iCurrentLine % 8) / 4;

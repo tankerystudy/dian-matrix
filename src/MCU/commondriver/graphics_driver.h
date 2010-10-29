@@ -5,21 +5,15 @@
     extern "C"{
 #endif
 
-#define IN 
-#define INOUT
-#define OUT
+#include "common_def.h"
 
 #define LED_LINE  16
 #define LED_ROW   8
 
-typedef unsigned char uchar;
-typedef uchar byte;
 
-
-void led_drv_DisInit(byte *pbGraphMem, byte bGraphLen);
-void led_drv_InterfaceMap(INOUT byte *bData);
+void led_drv_DisInit(byte pbGraphMem[]);
+void led_drv_InterfaceMap(byte *bData);
 void led_drv_Refresh(void);
-
 
 #ifdef __cplusplus
 }
