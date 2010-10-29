@@ -1,7 +1,7 @@
 #include <reg52.h>
 #include "common_def.h"
 #include "graphics_driver.h"
-//#include "serial_driver.h"
+#include "serial_driver.h"
 
 /* 全局变量定义 */
 /* 显示相关IO口定义 */
@@ -45,7 +45,7 @@ void SetCurrentLine(uchar iCurrentLine);
   YYYY-MM-DD
 
 *******************************************************************************/
-void led_drv_DisInit(byte pbGraphMem[])
+void led_drv_DisInit(byte pbGraphMem[], byte bGraphLen)
 {
     /* 1.使能74HC38。 */
     LINE_EN = 0;    /* 低电平使能 */
@@ -55,11 +55,11 @@ void led_drv_DisInit(byte pbGraphMem[])
 
     /* 3.获取显存。 */
     g_bGraphMem = pbGraphMem;
-    //g_bGraphLen = bGraphLen;
+    g_bGraphLen = bGraphLen;
 
     /* 4.设置串口模式0，用于传送数据。 */
     /* 调用串口驱动的接口 */
-    //SerialModeSelect(SERIAL_MODE_DISP);
+    SerialInit(g_bGraphMem, g_bGraphLen, 1);
 
     return;
 }
@@ -89,43 +89,22 @@ void led_drv_DisInit(byte pbGraphMem[])
   YYYY-MM-DD
 
 *******************************************************************************/
-/*void led_drv_InterfaceMap(byte *bData)
-{
-    bit temp[8];
-    bit tempdata[8];
-    uchar i = 0;
-    uchar data = 1;
-
-    while (8 > i)
-    {
-        tempdata[i] = (bit) (((*bData) & data) >> i);
-        data <<= 1;
-        i++;
-    }
-
-    /* 按照接口关系映射表进行映射 
-    temp[0] = tempdata[1];
-    temp[1] = tempdata[3];
-    temp[2] = tempdata[0];
-    temp[3] = tempdata[4];
-    temp[4] = tempdata[6];
-    temp[5] = tempdata[7];
-    temp[6] = tempdata[5];
-    temp[7] = tempdata[2];
-
-    /* 将8bits转换成1byte 
-    i = 0;
-    while (8 > i)
-    {
-        *bData = ((*bData) << i) & temp[7 - i];
-        i++;
-    }
-
-    return;
-}*/
 void led_drv_InterfaceMap(byte *bData)
 {
+    uchar i = 8;
+    byte temp = 0;
+    byte shiftdata = 0x01;
+//  byte maptable[8] = {1, 3, 0, 4, 6, 7, 5, 2};
+    byte maptable[8] = {6, 4, 7, 3, 1, 0, 2, 5};
+
+    do 
+    {
+        temp = (temp << 1) + ((*bData & (shiftdata << maptable[i-1])) >> maptable[i-1]);
+    } while (0 != --i);
+    
+    *bData = temp;
 }
+
 
 /*******************************************************************************
     Func Name: led_drv_Refresh
@@ -181,7 +160,7 @@ void led_drv_LineRefresh(byte *bData, uchar iCurrentLine)
     SetCurrentLine(iCurrentLine);
 
     /* 通过串口发送数据到74HC595 */
-    //SerialSendStr(bData);
+    SerialWrite(bData, LED_ROW);
 
     return;
 }
