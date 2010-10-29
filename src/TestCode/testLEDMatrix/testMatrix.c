@@ -20,23 +20,24 @@ void delay(byte time)
 
 void lighting(byte lineNum)
 {
-    ledLineD = (lineNum & 1) ? 1 : 0;
-    ledLineC = (lineNum & 2) ? 1 : 0;
-    ledLineB = (lineNum & 4) ? 1 : 0;
-    ledLineA = (lineNum & 8) ? 1 : 0;
+	ledLineA = (lineNum & 1) ? 1 : 0;
+    ledLineB = (lineNum & 2) ? 1 : 0;
+    ledLineC = (lineNum & 4) ? 1 : 0;
+    ledLineD = (lineNum & 8) ? 1 : 0;
 }
 
 void main()
 {
     byte lightLine = 0;
 
-    ledSwitch = 1;
+    ledSwitch = 0;
     
     while (1)
     {
         if (++lightLine == 16)
             lightLine = 0;
         lighting(lightLine);
-        delay(200);
+
+        delay(1);
     }
 }
