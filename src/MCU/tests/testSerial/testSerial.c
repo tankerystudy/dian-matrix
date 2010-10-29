@@ -1,12 +1,11 @@
 #include <reg52.h>
-#include "../../commondriver/serial_driver.h"
-
+#include "..\..\commondriver\common_def.h"
+#include "..\..\commondriver\serial_driver.h"
 
 #define DATA_LEN	8
 
- 
+/* serial data array */
 byte g_SerialArray[DATA_LEN];
-
 
 
 sfr  T2MOD = 0xC9;

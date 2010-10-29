@@ -40,7 +40,7 @@ void SerialWrite(byte *pucString, byte ucLen)
     byte ucStrlen= ucLen;
     byte *p= pucString;
 
-	while (ucStrlen > p++)
+	while ((byte*)ucStrlen > p++)
 	{
 		SBUF = *p;
 		while (TI == 0)         /* wait for transmit interrupt */  
