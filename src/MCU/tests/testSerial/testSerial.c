@@ -7,6 +7,7 @@
 /* serial data array */
 byte g_SerialArray[DATA_LEN];
 
+sbit isWorking = P1^4;
 
 sfr  T2MOD = 0xC9;
 sbit ledLineA = P2^4;
