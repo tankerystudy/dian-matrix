@@ -94,12 +94,15 @@ void led_drv_InterfaceMap(byte *bData)
     uchar i = 8;
     byte temp = 0;
     byte shiftdata = 0x01;
-//  byte maptable[8] = {1, 3, 0, 4, 6, 7, 5, 2};
+    /* maptable[i] represent the order of the element in the LEDmatrixArray order */
+    /* {QH, QG, QF, QE, QD, QC, QB, QA} */
     byte maptable[8] = {6, 4, 7, 3, 1, 0, 2, 5};
 
     do 
     {
-        temp = (temp << 1) + ((*bData & (shiftdata << maptable[i-1])) >> maptable[i-1]);
+        CY = 0;
+        temp = (temp << 1) + 
+               ((*bData & (shiftdata << maptable[i-1])) >> maptable[i-1]);
     } while (0 != --i);
     
     *bData = temp;
@@ -183,16 +186,16 @@ void led_drv_LineRefresh(byte *bData, uchar iCurrentLine)
 *******************************************************************************/
 void SetCurrentLine(uchar iCurrentLine)
 {
-    LINE_D= iCurrentLine / 8;
-    LINE_C= (iCurrentLine % 8) / 4;
-    LINE_B= (iCurrentLine % 4) / 2;
-    LINE_A= iCurrentLine % 2; 
-
-/*  
     LINE_A = (iCurrentLine & 1) ? 1 : 0;
     LINE_B = (iCurrentLine & 2) ? 1 : 0;
     LINE_C = (iCurrentLine & 4) ? 1 : 0;
     LINE_D = (iCurrentLine & 8) ? 1 : 0;
+    
+/*  alternative for the above expressions
+    LINE_D= iCurrentLine / 8;
+    LINE_C= (iCurrentLine % 8) / 4;
+    LINE_B= (iCurrentLine % 4) / 2;
+    LINE_A= iCurrentLine % 2; 
 */
 
     return;

@@ -4,7 +4,7 @@
 /* definition of functions declared in Serial_driver.h */
 static byte *g_SerialBuf;
 static byte g_MemLen;
-int g_BufCursor;
+static int g_BufCursor;
 
 /* receive data from SBUF */
 void SerialRecv(void) interrupt 4 using 3
@@ -38,13 +38,14 @@ byte SerialRead(byte *Buffer, byte BufLen)
 void SerialWrite(byte *pucString, byte ucLen) 
 {
     byte ucStrlen= ucLen;
-    byte *p= pucString;
+    byte i;
 
-	while ((byte*)ucStrlen > p++)
+	for (i= 0; i < ucLen; i++)
 	{
-		SBUF = *p;
+		SBUF = *(pucString + i);
 		while (TI == 0)         /* wait for transmit interrupt */  
 			;                   /* do nothing */
+        TI= 1;
 	}
 }
 
@@ -67,7 +68,5 @@ void SerialInit(byte *pucSerialMem, byte ucMemLen, bit isMode0)
         T2CON = 0x34;       // timer 2 run
         ES = 1;
     }
-    TI = 0;
-    RI = 0;
 }
 
