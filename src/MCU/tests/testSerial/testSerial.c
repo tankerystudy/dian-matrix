@@ -37,14 +37,15 @@ void lighting(byte lineNum)
 
 void ext_int0() interrupt 0
 {
-    int i;
-	for (i=0; i<DATA_LEN; i++)
-    {
-        CY= 0;
-		g_SerialArray[i] = 0x80>>i;
-        led_drv_InterfaceMap(&g_SerialArray[i]);
-	}
-	SerialWrite(g_SerialArray, 1);
+    static unsigned char i= 0;
+    unsigned char j;
+
+    if (i == 0x00)
+        i= 0x80;
+    j = i;
+	SerialWrite(&j, 1);
+    CY = 0;
+    i >>= 1;
 }
 
 void main()
@@ -57,14 +58,15 @@ void main()
     EA = 1;
     EX0 = 1;        // ENABLE EXTERN INTERRUPT 0
     IT0 = 1;        // EDGE-TRIGGERED INTERRUPT
-
+/*
 	for (i=0; i<DATA_LEN; i++)
     {
         CY= 0;
-		g_SerialArray[i] = 0x80>>i;
+		g_SerialArray[i] = 0xff;
 	}
 	SerialInit(g_SerialArray,DATA_LEN,1);
 	SerialWrite(g_SerialArray, DATA_LEN);
+*/
     while (1)
     {
         if (++lightLine == 16)
