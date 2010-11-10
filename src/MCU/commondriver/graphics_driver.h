@@ -11,8 +11,8 @@
 #define LED_ROW   8
 
 
-void led_drv_DisInit(byte pbGraphMem[], byte bGraphLen);
-void led_drv_InterfaceMap(byte *bData);
+void led_drv_DisInit(uchar pbGraphMem[], byte bGraphLen);
+void led_drv_InterfaceMap(uchar *bData);
 void led_drv_Refresh(void);
 
 #ifdef __cplusplus
