@@ -5,20 +5,20 @@
 
 /* 全局变量定义 */
 /* 显示相关IO口定义 */
-sbit LINE_A = P2^5;
-sbit LINE_B = P2^4;
-sbit LINE_C = P2^3;
-sbit LINE_D = P2^2;
-sbit LINE_EN = P2^1;
+sbit LINE_A = P2^4;
+sbit LINE_B = P2^3;
+sbit LINE_C = P2^2;
+sbit LINE_D = P2^1;
+sbit LINE_EN = P2^0;
+
+/* 寄存器使能，高电平开启 */
+sbit RES_EN = P1^4;
+/* 寄存器时钟线控制 */
+sbit RES_CLK = P3^3;
 
 /* 显存和显存大小 */
-static byte *g_bGraphMem;
+static uchar *g_bGraphMem;
 static byte g_bGraphLen;
-
-
-/* 当前显示的行数 */
-uchar g_ucCurrentLine;
-uchar g_ucCurrentRowLed;
 
 void led_drv_LineRefresh(byte *bData, uchar iCurrentLine);
 void SetCurrentLine(uchar iCurrentLine);
@@ -43,15 +43,17 @@ void SetCurrentLine(uchar iCurrentLine);
   DATE        NAME             DESCRIPTION
 --------------------------------------------------------------------------------
   YYYY-MM-DD
+  2010-11-10  Tankery          添加寄存器控制及寄存器时钟线控制
 
 *******************************************************************************/
-void led_drv_DisInit(byte pbGraphMem[], byte bGraphLen)
+void led_drv_DisInit(byte *pbGraphMem, byte bGraphLen)
 {
     /* 1.使能74HC38。 */
     LINE_EN = 0;    /* 低电平使能 */
 
-    /* 2.初始化全局变量。 */
-    g_ucCurrentLine = 0;
+    /* 设置寄存器 */
+    RES_EN = 1;     /* 高电平使能 */
+    RES_CLK = 0;    /* 释放时钟线控制权 */
 
     /* 3.获取显存。 */
     g_bGraphMem = pbGraphMem;
@@ -108,6 +110,32 @@ void led_drv_InterfaceMap(byte *bData)
     *bData = temp;
 }
 
+/*******************************************************************************
+    Func Name: led_drv_DisFormat
+ Date Created: 2010-11-10
+       Author: Tankery
+  Description: 调用led_drv_InterfaceMap函数，格式化所有显存数据
+        Input: none
+       Output: none
+       Return: void
+      Caution: 无
+--------------------------------------------------------------------------------
+  Modification History
+  DATE        NAME             DESCRIPTION
+--------------------------------------------------------------------------------
+  YYYY-MM-DD
+
+*******************************************************************************/
+void led_drv_DisFormat(void)
+{
+    int i;
+
+    for (i=0; i < g_bGraphLen; i++)
+    {
+        led_drv_InterfaceMap(g_bGraphMem + i);
+	}        
+}
+
 
 /*******************************************************************************
     Func Name: led_drv_Refresh
@@ -127,14 +155,15 @@ void led_drv_InterfaceMap(byte *bData)
 *******************************************************************************/
 void led_drv_Refresh(void)
 {
+    /* 当前显示的行数 */
+    static byte currentLine = 0;
     /* 刷新一行 */
-    led_drv_LineRefresh((g_bGraphMem + g_ucCurrentLine * 8), g_ucCurrentLine);
+    led_drv_LineRefresh((g_bGraphMem + currentLine*LED_ROW), currentLine);
 
     /* 更新当前行 */
-    g_ucCurrentLine++;
-    if (LED_LINE <= g_ucCurrentLine)
+    if (++currentLine == LED_LINE)
     {
-        g_ucCurrentLine = 0;
+        currentLine = 0;
     }
     
     return;
@@ -155,15 +184,28 @@ void led_drv_Refresh(void)
   DATE        NAME             DESCRIPTION
 --------------------------------------------------------------------------------
   YYYY-MM-DD
+  2010-11-10  Tankery          刷新前关闭显示屏，减少余光
+  2010-11-10  Tankery          补偿一个时钟周期，使正确数据锁存
 
 *******************************************************************************/
 void led_drv_LineRefresh(byte *bData, uchar iCurrentLine)
 {
-    /* 行选 */
-    SetCurrentLine(iCurrentLine);
+    /* 关闭行显 */
+    LINE_EN = 1;
 
     /* 通过串口发送数据到74HC595 */
     SerialWrite(bData, LED_ROW);
+    /* 由于硬件设计失误，补偿一个时钟周期，使正确数据锁存 */
+    RES_EN = 0;
+    RES_CLK = 1;
+    RES_EN = 1;
+    RES_CLK = 0;
+
+    /* 行选 */
+    SetCurrentLine(iCurrentLine);
+    
+    /* 打开行显 */
+    LINE_EN = 0;
 
     return;
 }
@@ -190,13 +232,6 @@ void SetCurrentLine(uchar iCurrentLine)
     LINE_B = (iCurrentLine & 2) ? 1 : 0;
     LINE_C = (iCurrentLine & 4) ? 1 : 0;
     LINE_D = (iCurrentLine & 8) ? 1 : 0;
-    
-/*  alternative for the above expressions
-    LINE_D= iCurrentLine / 8;
-    LINE_C= (iCurrentLine % 8) / 4;
-    LINE_B= (iCurrentLine % 4) / 2;
-    LINE_A= iCurrentLine % 2; 
-*/
 
     return;
 }

@@ -34,7 +34,6 @@ void delay(int time)
 
 void lighting(byte lineNum)
 {
-    ledSwitch = 0;
 	ledLineA = (lineNum & 1) ? 1 : 0;
     ledLineB = (lineNum & 2) ? 1 : 0;
     ledLineC = (lineNum & 4) ? 1 : 0;
@@ -60,7 +59,7 @@ void main()
     EX0 = 1;        // ENABLE EXTERN INTERRUPT 0
     IT0 = 1;        // EDGE-TRIGGERED INTERRUPT
 
-	SerialInit(&g_SerialArray[0][0],DATA_LEN,1);
+	SerialInit(&g_SerialArray[0][0],LINE_LEN*DATA_LEN,1);
 
 	for (y=0; y<LINE_LEN; y++)
 	   for (x=0; x<DATA_LEN; x++)
@@ -83,6 +82,7 @@ void main()
         SCLK = 0;
 
         lighting(lightLine);
+        ledSwitch = 0;
 
         delay(freshTime);
     }
