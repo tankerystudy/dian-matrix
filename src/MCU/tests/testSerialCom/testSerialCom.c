@@ -17,18 +17,15 @@ void delay(int time)
     } while (--time != 0);
 }
 
-void ext_int0() interrupt 0
+void ext_int0() interrupt  0
 {
-    EA = 1;
-    EX0 = 1;        // ENABLE EXTERN INTERRUPT 0
-    IT0 = 1;        // EDGE-TRIGGERED INTERRUPT
 
-	SerialInit(&g_SerialArray[0][0], LED_ROW*LED_LINE, 0);
+    SerialInit(&g_SerialArray[0][0], LED_ROW*LED_LINE, 0);
 
-	while (SerialRead(&g_SerialArray[0][0], LED_ROW*LED_LINE) < 0)
+    while (SerialRead(&g_SerialArray[0][0], LED_ROW*LED_LINE) < 0)
         ;
 
-	led_drv_DisInit(&g_SerialArray[0][0], LED_ROW*LED_LINE);
+    led_drv_DisInit(&g_SerialArray[0][0], LED_ROW*LED_LINE);
     led_drv_DisFormat();
 }
 
@@ -36,18 +33,22 @@ void main()
 {
     unsigned char x, y;
 
-	for (y=0; y < LED_LINE; y++)
-	   for (x=0; x < LED_ROW; x++)
-        {
-    		g_SerialArray[y][x] = ~(y+1);
-    	}
+    EA = 1;
+    EX0 = 1;        // ENABLE EXTERN INTERRUPT 0
+    IT0 = 1;        // EDGE-TRIGGERED INTERRUPT
 
-	led_drv_DisInit(&g_SerialArray[0][0], LED_LINE*LED_ROW);
+    for (y=0; y < LED_LINE; y++)
+       for (x=0; x < LED_ROW; x++)
+        {
+            g_SerialArray[y][x] = ~(y+1);
+        }
+
+    led_drv_DisInit(&g_SerialArray[0][0], LED_LINE*LED_ROW);
     led_drv_DisFormat();
 
     while (1)
     {
-    	led_drv_Refresh();
+        led_drv_Refresh();
 
         delay(1);
     }

@@ -20,7 +20,7 @@ void delay(byte time)
 
 void lighting(byte lineNum)
 {
-	ledLineA = (lineNum & 1) ? 1 : 0;
+    ledLineA = (lineNum & 1) ? 1 : 0;
     ledLineB = (lineNum & 2) ? 1 : 0;
     ledLineC = (lineNum & 4) ? 1 : 0;
     ledLineD = (lineNum & 8) ? 1 : 0;

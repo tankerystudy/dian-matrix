@@ -176,6 +176,4 @@ DUMMY_CLOCK_CYCLE:
     call ASMI2CClose
 ret
 
-
-
 end

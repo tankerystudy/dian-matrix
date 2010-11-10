@@ -25,7 +25,6 @@ void SetCurrentLine(uchar iCurrentLine);
 
 
 /* ÏÔ¿¨Çý¶¯ */
-
 /*******************************************************************************
     Func Name: led_drv_DisInit
  Date Created: 2010-10-14
@@ -133,7 +132,7 @@ void led_drv_DisFormat(void)
     for (i=0; i < g_bGraphLen; i++)
     {
         led_drv_InterfaceMap(g_bGraphMem + i);
-	}        
+    }        
 }
 
 

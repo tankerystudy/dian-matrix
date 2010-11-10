@@ -31,10 +31,9 @@ void delay(int time)
     } while (--time != 0);
 }
 
-
 void lighting(byte lineNum)
 {
-	ledLineA = (lineNum & 1) ? 1 : 0;
+    ledLineA = (lineNum & 1) ? 1 : 0;
     ledLineB = (lineNum & 2) ? 1 : 0;
     ledLineC = (lineNum & 4) ? 1 : 0;
     ledLineD = (lineNum & 8) ? 1 : 0;
@@ -59,15 +58,15 @@ void main()
     EX0 = 1;        // ENABLE EXTERN INTERRUPT 0
     IT0 = 1;        // EDGE-TRIGGERED INTERRUPT
 
-	SerialInit(&g_SerialArray[0][0],LINE_LEN*DATA_LEN,1);
+    SerialInit(&g_SerialArray[0][0],LINE_LEN*DATA_LEN,1);
 
-	for (y=0; y<LINE_LEN; y++)
-	   for (x=0; x<DATA_LEN; x++)
+    for (y=0; y<LINE_LEN; y++)
+       for (x=0; x<DATA_LEN; x++)
         {
             CY= 0;
-    		g_SerialArray[y][x] = ~(y+1);
+            g_SerialArray[y][x] = ~(y+1);
             led_drv_InterfaceMap(&g_SerialArray[y][x]);
-    	}
+        }
 
     while (1)
     {
@@ -75,7 +74,7 @@ void main()
         if (++lightLine == 16)
             lightLine = 0;
 
-    	SerialWrite(&g_SerialArray[lightLine%LINE_LEN][0], DATA_LEN);
+        SerialWrite(&g_SerialArray[lightLine%LINE_LEN][0], DATA_LEN);
         isWorking = 0;
         SCLK = 1;
         isWorking = 1;

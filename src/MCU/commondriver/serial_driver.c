@@ -29,7 +29,7 @@ byte SerialRead(byte *Buffer, byte BufLen)
     {
         return -1;
     }
-
+ 
     Buffer = g_SerialBuf;
     return g_MemLen;
 }
@@ -40,20 +40,20 @@ void SerialWrite(byte *pucString, byte ucLen)
     byte ucStrlen= ucLen;
     byte i;
 
-	for (i= 0; i < ucLen; i++)
-	{
-		SBUF = *(pucString + i);
-		while (TI == 0)         /* wait for transmit interrupt */  
-			;                   /* do nothing */
+    for (i= 0; i < ucLen; i++)
+    {
+        SBUF = *(pucString + i);
+        while (TI == 0)         /* wait for transmit interrupt */  
+            ;                   /* do nothing */
         TI= 1;
-	}
+    }
 }
 
 /* initialization of Serial */
 void SerialInit(byte *pucSerialMem, byte ucMemLen, bit isMode0)
 {
     g_SerialBuf= pucSerialMem;
-	g_MemLen = ucMemLen;			
+    g_MemLen = ucMemLen;            
     g_BufCursor = 0;
 
     if (isMode0)
