@@ -17,6 +17,8 @@ sbit ledLineC = P2^2;
 sbit ledLineD = P2^1;
 sbit ledSwitch = P2^0;
 
+sbit SCLK = P3^3;
+
 void delay(byte time)
 {
     byte i;
@@ -37,36 +39,49 @@ void lighting(byte lineNum)
 
 void ext_int0() interrupt 0
 {
-    static unsigned char i= 0;
-    unsigned char j;
+    unsigned char i;
 
-    if (i == 0x00)
-        i= 0x80;
-    j = i;
-	SerialWrite(&j, 1);
-    CY = 0;
-    i >>= 1;
+	for (i=0; i<DATA_LEN; i++)
+    {
+        CY= 0;
+		g_SerialArray[i] = ~i;
+        led_drv_InterfaceMap(&g_SerialArray[i]);
+	}
+	SerialWrite(g_SerialArray, DATA_LEN);
+
+    isWorking = 0;
+    SCLK = 1;
+    isWorking = 1;
+    SCLK = 0;
 }
 
 void main()
 {
-    int i;
+    unsigned char i;
     byte lightLine = 0;
     ledSwitch = 0;
     isWorking = 1;
+    SCLK = 0;
 	
     EA = 1;
     EX0 = 1;        // ENABLE EXTERN INTERRUPT 0
     IT0 = 1;        // EDGE-TRIGGERED INTERRUPT
-/*
+
+	SerialInit(g_SerialArray,DATA_LEN,1);
+
 	for (i=0; i<DATA_LEN; i++)
     {
         CY= 0;
-		g_SerialArray[i] = 0xff;
+		g_SerialArray[i] = i;
+        led_drv_InterfaceMap(&g_SerialArray[i]);
 	}
-	SerialInit(g_SerialArray,DATA_LEN,1);
 	SerialWrite(g_SerialArray, DATA_LEN);
-*/
+
+    isWorking = 0;
+    SCLK = 1;
+    isWorking = 1;
+    SCLK = 0;
+
     while (1)
     {
         if (++lightLine == 16)
