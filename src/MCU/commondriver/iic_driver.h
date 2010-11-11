@@ -1,5 +1,5 @@
-#ifndef SEED51_C_I2C_COM_H
-#define SEED51_C_I2C_COM_H
+#ifndef __LIC_DRIVER_H__
+#define __LIC_DRIVER_H__
 ////////////////////////////////////////////////////////////
 // the I2C communication package, implement like file operations.
 #include "commonDef.h"
@@ -12,7 +12,7 @@ enum {
 // open EEPROM at memAddr with specific mode
 // default mode is: WRITE, PAGE0, ADDR00
 // using | to change the mode
-// return if open succes
+// return if open success
 bit I2COpen(const byte memAddr, const byte mode);
 // write specific length byte from dataAddr
 // returns:

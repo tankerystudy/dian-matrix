@@ -10,7 +10,7 @@ static int g_BufCursor;
 void SerialRecv(void) interrupt 4 using 3
 {
     /* memory full, return */
-    if (g_BufCursor = g_MemLen)
+    if (g_BufCursor == g_MemLen)
         return;
 
     if (RI)                         /* if receive interrupt is triggered */

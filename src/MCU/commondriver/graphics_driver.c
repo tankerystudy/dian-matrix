@@ -20,13 +20,15 @@ sbit RES_CLK = P3^3;
 static uchar *g_bGraphMem;
 static byte g_bGraphLen;
 
-void led_drv_LineRefresh(byte *bData, uchar iCurrentLine);
-void SetCurrentLine(uchar iCurrentLine);
+static void LineRefresh(byte *bData, uchar iCurrentLine);
+static void SetCurrentLine(uchar iCurrentLine);
+//static void ByteMapping(byte *bData);
 
 
 /* 显卡驱动 */
+
 /*******************************************************************************
-    Func Name: led_drv_DisInit
+    Func Name: GDI_Init
  Date Created: 2010-10-14
        Author: lihaitao
   Description: 显示初始化。
@@ -45,7 +47,7 @@ void SetCurrentLine(uchar iCurrentLine);
   2010-11-10  Tankery          添加寄存器控制及寄存器时钟线控制
 
 *******************************************************************************/
-void led_drv_DisInit(byte *pbGraphMem, byte bGraphLen)
+void GDI_Init(byte pbGraphMem[], byte bGraphLen)
 {
     /* 1.使能74HC38。 */
     LINE_EN = 0;    /* 低电平使能 */
@@ -66,7 +68,7 @@ void led_drv_DisInit(byte *pbGraphMem, byte bGraphLen)
 }
 
 /*******************************************************************************
-    Func Name: led_drv_InterfaceMap
+    Func Name: GDI_ByteMapping
  Date Created: 2010-10-14
        Author: lihaitao
   Description: 按接口映射关系格式化显存。
@@ -90,7 +92,7 @@ void led_drv_DisInit(byte *pbGraphMem, byte bGraphLen)
   YYYY-MM-DD
 
 *******************************************************************************/
-void led_drv_InterfaceMap(byte *bData)
+void GDI_ByteMapping(byte *bData)
 {
     uchar i = 8;
     byte temp = 0;
@@ -110,10 +112,10 @@ void led_drv_InterfaceMap(byte *bData)
 }
 
 /*******************************************************************************
-    Func Name: led_drv_DisFormat
+    Func Name: GDI_DisFormat
  Date Created: 2010-11-10
        Author: Tankery
-  Description: 调用led_drv_InterfaceMap函数，格式化所有显存数据
+  Description: 调用ByteMapping函数，格式化所有显存数据
         Input: none
        Output: none
        Return: void
@@ -125,19 +127,19 @@ void led_drv_InterfaceMap(byte *bData)
   YYYY-MM-DD
 
 *******************************************************************************/
-void led_drv_DisFormat(void)
+void GDI_DisFormat(void)
 {
     int i;
 
     for (i=0; i < g_bGraphLen; i++)
     {
-        led_drv_InterfaceMap(g_bGraphMem + i);
-    }        
+        GDI_ByteMapping(g_bGraphMem + i);
+	}        
 }
 
 
 /*******************************************************************************
-    Func Name: led_drv_Refresh
+    Func Name: GDI_Refresh
  Date Created: 2010-10-15
        Author: lihaitao
   Description: 
@@ -152,12 +154,12 @@ void led_drv_DisFormat(void)
   YYYY-MM-DD
 
 *******************************************************************************/
-void led_drv_Refresh(void)
+void GDI_Refresh(void)
 {
     /* 当前显示的行数 */
     static byte currentLine = 0;
     /* 刷新一行 */
-    led_drv_LineRefresh((g_bGraphMem + currentLine*LED_ROW), currentLine);
+    LineRefresh((g_bGraphMem + currentLine * LED_ROW), currentLine);
 
     /* 更新当前行 */
     if (++currentLine == LED_LINE)
@@ -169,7 +171,7 @@ void led_drv_Refresh(void)
 }
 
 /*******************************************************************************
-    Func Name: led_drv_LineRefresh
+    Func Name: LineRefresh
  Date Created: 2010-10-14
        Author: lihaitao
   Description: 刷新一行的数据。将控制一行LED的数据(8字节)通过串口模式0复用，
@@ -187,7 +189,7 @@ void led_drv_Refresh(void)
   2010-11-10  Tankery          补偿一个时钟周期，使正确数据锁存
 
 *******************************************************************************/
-void led_drv_LineRefresh(byte *bData, uchar iCurrentLine)
+static void LineRefresh(byte *bData, uchar iCurrentLine)
 {
     /* 关闭行显 */
     LINE_EN = 1;
@@ -225,7 +227,7 @@ void led_drv_LineRefresh(byte *bData, uchar iCurrentLine)
   YYYY-MM-DD
 
 *******************************************************************************/
-void SetCurrentLine(uchar iCurrentLine)
+static void SetCurrentLine(uchar iCurrentLine)
 {
     LINE_A = (iCurrentLine & 1) ? 1 : 0;
     LINE_B = (iCurrentLine & 2) ? 1 : 0;

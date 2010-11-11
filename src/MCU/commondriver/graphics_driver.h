@@ -11,10 +11,11 @@
 #define LED_ROW   4
 
 
-void led_drv_DisInit(uchar pbGraphMem[], byte bGraphLen);
-void led_drv_InterfaceMap(uchar *bData);
-void led_drv_DisFormat(void);
-void led_drv_Refresh(void);
+void GDI_Init(uchar pbGraphMem[], byte bGraphLen);
+void GDI_ByteMapping(byte *bData);
+void GDI_DisFormat(void);
+void GDI_Refresh(void);
+
 
 #ifdef __cplusplus
 }

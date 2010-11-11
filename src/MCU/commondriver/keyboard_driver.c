@@ -17,17 +17,38 @@ byte ucHighTime;
 byte ucLowTime;
 byte ucHighTimeBefore;
 
-static int CheckState();
-static void JudgeNoChange();
-static void JudgeChange();
+static int CheckState(void);
+static void JudgeNoChange(void);
+static void JudgeChange(void);
+static SKeyEvent GetKeyState(void);
 
 
 /***************************************************************
-Function:JudgeDec()
+Function:KDI_Init()
+Discription:This function is used to initialize the vars used 
+            in getting the status of the keyboard
+***************************************************************/
+void KDI_Init(void)
+{
+    ucBBtn = 0;
+    ucCBtn = 0;
+    ucLastPress = 0;  
+    ucHighTime = 0;
+    ucLowTime = 0;
+
+    bOneClick = 0;
+    bLongPress = 0;
+    bDoubleClick = 0;
+    bIsInDoubleClick = 0;
+    bAllowLongPress = 0;
+}
+
+/***************************************************************
+Function:KDI_Scan()
 Discription:Every time we get into the function,
             we check the keyboard status
 ***************************************************************/
-void JudgeDec()
+void KDI_Scan(void)
 {
     CheckState();
     if(ucBBtn == ucCBtn)
@@ -40,12 +61,71 @@ void JudgeDec()
     }
     return;
 }
+
+/***************************************************************
+Function:KDI_GetCurrentKey()
+Discription:The fuction is the main interface of the lib
+***************************************************************/
+void KDI_GetCurrentKey(uchar *CurrentKey, EKeyEventKind *KeyEvent)
+{
+    SKeyEvent KeyInfo;
+
+    KeyInfo = GetKeyState();
+
+    *CurrentKey = KeyInfo.ucKeyNum;
+    *KeyEvent = KeyInfo.eEventKind;
+
+    return;    
+}
+
+/***************************************************************
+Function:   CheckState()
+Discription:This function is used to check the button pressed 
+Output:     The number of the pressed button ( 1 - 7 )
+            return 0 means nothing pressed
+***************************************************************/
+static int CheckState(void)
+{
+    /* set the button pressed before */
+    ucBBtn = ucCBtn;
+
+    switch (P0 | 0x80)  /* get the low 7 bits of P0 */
+    {
+        case 0xFD:  /* S1 */
+            ucCBtn = KEY_LEFT;
+            break;
+        case 0xF7:  /* S2 */
+            ucCBtn = KEY_OK;
+            break;
+        case 0xEF:  /* S3 */ 
+            ucCBtn = KEY_RIGHT;
+            break;        
+        case 0xFE:  /* S4 */
+            ucCBtn = KEY_YES;
+            break;
+        case 0xDF:  /* S5 */
+            ucCBtn = KEY_DOWN;
+            break;
+        case 0xFB:  /* S6 */
+            ucCBtn = KEY_UP;
+            break;
+        case 0xBF:  /* S7 */
+            ucCBtn = KEY_NO;
+            break;
+        default:  /* no button clicked */
+            ucCBtn = KEY_NULL;
+            break;
+    }
+    
+    return 0;
+}
+
 /***************************************************************
 Function:JudgeNoChange()
 Discription:Every time we find that the former key and the 
             current key are the same, we get in this function.
 ***************************************************************/
-static void JudgeNoChange()
+static void JudgeNoChange(void)
 {
     //relax
     if(ucCBtn == KEY_NULL)
@@ -94,7 +174,7 @@ Function:JudgeChange()
 Discription:Every time we find that the former key and the 
             current key are the same, we get in this function.
 ***************************************************************/
-static void JudgeChange()
+static void JudgeChange(void)
 {
     bit bTempInDoubleClick;
     if(ucCBtn == KEY_NULL)
@@ -139,73 +219,10 @@ static void JudgeChange()
 }
 
 /***************************************************************
-Function:   CheckState()
-Discription:This function is used to check the button pressed 
-Output:     The number of the pressed button ( 1 - 7 )
-            return 0 means nothing pressed
-***************************************************************/
-static int CheckState()
-{
-    /* set the button pressed before */
-    ucBBtn = ucCBtn;
-
-    switch (P0 | 0x80)  /* get the low 7 bits of P0 */
-    {
-        case 0xFD:  /* S1 */
-            ucCBtn = KEY_LEFT;
-            break;
-        case 0xF7:  /* S2 */
-            ucCBtn = KEY_OK;
-            break;
-        case 0xEF:  /* S3 */ 
-            ucCBtn = KEY_RIRHT;
-            break;        
-        case 0xFE:  /* S4 */
-            ucCBtn = KEY_YES;
-            break;
-        case 0xDF:  /* S5 */
-            ucCBtn = KEY_DOWN;
-            break;
-        case 0xFB:  /* S6 */
-            ucCBtn = KEY_UP;
-            break;
-        case 0xBF:  /* S7 */
-            ucCBtn = KEY_NO;
-            break;
-        default:  /* no button clicked */
-            ucCBtn = KEY_NULL;
-            break;
-    }
-    
-    return 0;
-}
-
-
-/***************************************************************
-Function:InitKeyState()
-Discription:This function is used to initialize the vars used 
-            in getting the status of the keyboard
-***************************************************************/
-void InitKeyState()
-{
-    ucBBtn = 0;
-    ucCBtn = 0;
-    ucLastPress = 0;  
-    ucHighTime = 0;
-    ucLowTime = 0;
-
-    bOneClick = 0;
-    bLongPress = 0;
-    bDoubleClick = 0;
-    bIsInDoubleClick = 0;
-    bAllowLongPress = 0;
-}
-
-/***************************************************************
 Function:GetKeyState()
 Discription:The fuction is the main interface of the lib
 ***************************************************************/
-SKeyEvent GetKeyState()
+static SKeyEvent GetKeyState(void)
 {
     SKeyEvent returnValue;
     if(bOneClick == 1)
@@ -243,4 +260,5 @@ SKeyEvent GetKeyState()
 
     return returnValue;
 }
+
 

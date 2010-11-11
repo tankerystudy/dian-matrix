@@ -1,5 +1,5 @@
 #include <reg52.h>
-#include "ci2ccom.h"
+#include "lic_driver.h"
 
 
 static byte currentAddress;
