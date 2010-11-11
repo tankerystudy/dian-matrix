@@ -41,6 +41,8 @@ void KDI_Init(void)
     bDoubleClick = 0;
     bIsInDoubleClick = 0;
     bAllowLongPress = 0;
+
+    return;
 }
 
 /***************************************************************
@@ -59,6 +61,7 @@ void KDI_Scan(void)
     {
         JudgeChange();
     }
+    
     return;
 }
 
@@ -165,7 +168,9 @@ static void JudgeNoChange(void)
         {
             ucLowTime--;            
         }
-    }    
+    }   
+
+    return;
 }
 
 

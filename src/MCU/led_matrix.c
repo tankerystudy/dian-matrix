@@ -27,7 +27,7 @@ enum Mode   {                   /* 模式种类 */
     MODE_COUNT
 };
 
-byte graphData[LED_ROW][LED_LINE];  /* 显存数据 */
+byte graphData[LED_LINE][LED_ROW];  /* 显存数据 */
 enum Mode currentMode;          /* 当前模式 */
 bit isEditing;                  /* 是否正在修改状态 */
 bit needUpdate;                 /* 标志是否需要更新 */
@@ -39,7 +39,7 @@ Location cursor;                /* 当前光标位置 */
 Location preCursor;             /* 先前光标位置 */
 Location firstPoint;            /* 直线的第一点 */
 
-structTime editingTime;         /* 正在修改的时间 */
+stTime editingTime;         /* 正在修改的时间 */
 
 #define TIME_TIMER      1       /* 定义定时器时间 */
 /* 初始化定时器为2ms
@@ -55,13 +55,26 @@ structTime editingTime;         /* 正在修改的时间 */
 /********************************************************************/
 /* 初始化函数 */
 
+/* 初始化全局变量 */
+void InitGlobal(void)
+{
+    currentMode = MODE_COUNT;
+    isEditing = 0;
+    needUpdate = 0;
+    drawingLine = 0;
+
+    return;
+}
+
 /* 初始化定时器为TIME_TIMER
  */
 void InitTimer(void)
 {
     TMOD = 0x01;     /* T0/T1,mode1 */ 
     TH0 = 0xfc;      /* T0计数初值，定时2ms */
-    TL0 = 0x18;      /* T0用于刷新键盘 */
+    TL0 = 0x18;      /* T0用于刷新键盘 */\
+
+    return;
 }
 
 void InitInte(void)
@@ -69,6 +82,8 @@ void InitInte(void)
     EA = 1;          /* 开中断 */
     ET0 = 1;         /* 允许T0中断 */
     EX0 = 1;         /* 允许外部中断0 */
+
+    return;
 }
 
 
@@ -77,13 +92,28 @@ void InitInte(void)
  * 从EE中读取点阵数据到内存
  */
 void InitGraphMem(void)
-{
+{    
+    byte x,y;
+
+    for (y=0; y < LED_LINE; y++)
+    {
+        for (x=0; x < LED_ROW; x++)
+        {
+            graphData[y][x] = 0;
+        }
+    }
+    /* 从EE中读取点阵数据到内存 */
+    /* graphData = ; */
     
+    return;
 }
 
 /* 全局初始化函数 */
 void InitMain(void)
 {    
+    /* 初始化全局变量 */
+    InitGlobal();
+    
     /* 初始化全局定时器 */
     InitTimer();
 
@@ -94,13 +124,15 @@ void InitMain(void)
     InitGraphMem();
     
     /* 初始化显卡驱动 */
-    GDI_Init(graphData);
+    GDI_Init(graphData, LED_MEM);
     
     /* 初始化键盘驱动 */
     KDI_Init();
     
     /* 初始化时间管理模块 */
-    TDI_Init();    
+    TMI_Init(graphData, LED_MEM, &editingTime);
+
+    return;
 }
 
 
@@ -134,7 +166,7 @@ void OnTimer(void) interrupt 1 using 0
     {
         tcTCount= TIME_TIMECOUNT/TIME_TIMER;
         /* 调用时间管理模块的更新时间函数 */
-        TDI_Refresh();
+        TMI_Refresh();
     }
     if (--efTCount == 0)
     {
@@ -147,6 +179,8 @@ void OnTimer(void) interrupt 1 using 0
 			Blink();
         }
     }
+
+    return;
 }
 
 /* 外部中断0 */
@@ -157,12 +191,13 @@ void ExtInt0(void) interrupt 0 using 1
     {
         currentMode= MODE_STATIC;
     }
+
+    return;
 }
 
 
 /********************************************************************/
 /* 功能函数 */
-
 
 void Blink(void)
 {
@@ -179,18 +214,23 @@ void Blink(void)
             /* 无闪烁 */
             break;
     }
+
+    return;
 }
 
 void SwitchTimeUnit(bit goRight)
 {
+    return;
 }
 
 void AddCurUnitTime(bit incCurUnit)
 {
+    return;
 }
 
 void CurcorMove(byte direction)
 {
+    return;
 }
 
 /*
@@ -263,6 +303,8 @@ void KeyEvent(byte curKey, EnumKeyEventKind event)
         default:
             break;
     }
+
+    return;
 }
 
 
@@ -287,6 +329,8 @@ void UpdatePaint()
             preCursor= cursor;
         }
     }
+
+    return;
 }
 
 /*
@@ -301,9 +345,13 @@ void UpdateTime()
     if (!isEditing)
     {
         if (currentMode == MODE_TIMER)
+        {
             TMI_GetCurrentTime(&editingTime);
+        }
         else
-            TMI_GetRemainTime(&editingTime);
+        {
+            TMI_GetRemainTime(&editingTime);
+        }
     }
 	
 	/* 转换时间为字符数组 */
@@ -318,17 +366,33 @@ void UpdateTime()
 
 	/* 绘制 */
     GDI_DrawCharArray(disArray);
+
+    return;
 }
 
 void UpdateCom()
 {
+    byte length;
+
+    /* 初始化打开串口下载 */
+    SerialInit(graphData, (LED_LINE * LED_ROW), 0);
+    
     /* 如果读取下载信息成功 */
-    if (CDI_SerialRead(graphData) > 0)
+    length = SerialRead(graphData, (LED_LINE * LED_ROW));
+    if (length > 0)
     {
         /* 关闭通讯 */
         /* 初始化显卡 */
         /* 设置模式为静态显示 */
+        currentMode = MODE_STATIC;
+
+        /* 调用EE的接口函数将数据存到EE */
     }
+
+    /* 设置为串口模式0，打开串口传送数据 */
+    SerialInit(graphData, (LED_LINE * LED_ROW), 0);
+
+    return;
 }
 
 /*
@@ -355,6 +419,8 @@ void UpdateData(void)
             /* 错误处理 */
             break;
     }
+
+    return;
 }
 
 void main()
@@ -376,6 +442,8 @@ void main()
 
         UpdateData();
     }
+
+    return;
 }
 
 

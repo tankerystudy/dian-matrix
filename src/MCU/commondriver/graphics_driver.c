@@ -52,7 +52,7 @@ void GDI_Init(byte pbGraphMem[], byte bGraphLen)
     /* 1.使能74HC38。 */
     LINE_EN = 0;    /* 低电平使能 */
 
-    /* 设置寄存器 */
+    /* 2.设置寄存器 */
     RES_EN = 1;     /* 高电平使能 */
     RES_CLK = 0;    /* 释放时钟线控制权 */
 
@@ -109,6 +109,8 @@ void GDI_ByteMapping(byte *bData)
     } while (0 != --i);
     
     *bData = temp;
+
+    return;
 }
 
 /*******************************************************************************
@@ -134,7 +136,9 @@ void GDI_DisFormat(void)
     for (i=0; i < g_bGraphLen; i++)
     {
         GDI_ByteMapping(g_bGraphMem + i);
-	}        
+	}
+
+    return;
 }
 
 

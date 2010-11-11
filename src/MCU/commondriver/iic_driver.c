@@ -16,7 +16,7 @@ extern void ASMI2CReset(void);
 // open EEPROM at memAddr with specific mode
 // default mode is: WRITE, PAGE0, ADDR00
 // using | to change the mode
-// return if open succes
+// return if open success
 bit I2COpen(const byte memAddr, const byte mode)
 {
     currentMode = mode | 0xA0;              // add memorizer mode

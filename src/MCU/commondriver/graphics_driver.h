@@ -9,6 +9,7 @@
 
 #define LED_LINE  16
 #define LED_ROW   4
+#define LED_MEM   (LED_LINE * LED_ROW)
 
 
 void GDI_Init(uchar pbGraphMem[], byte bGraphLen);
