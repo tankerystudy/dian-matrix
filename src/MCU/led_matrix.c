@@ -92,19 +92,22 @@ void OnTimer()
     {
         ksTCount= TIME_KEYSCAN/TIME_TIMER;
         /* 调用键盘驱动的键盘扫描函数 */
+		KDI_KeyScan();
     }
     if (--tcTCount == 0)
     {
         tcTCount= TIME_TIMECOUNT/TIME_TIMER;
         /* 调用时间管理模块的更新时间函数 */
+		TMI_UpdateTime();
     }
     if (--efTCount == 0)
     {
         efTCount= TIME_EFFECTS/TIME_TIMER;
 
-        /* 编辑状态下的闪烁特效 */
-        if (/* 是编辑状态 */)
+        /* 是编辑状态, 则编辑状态下的闪烁特效 */
+        if (isEditing)
             /* 调用本模块的闪烁函数 */
+			Blink();
     }
 }
 
@@ -121,6 +124,35 @@ void ExtInt0()
 /* 功能函数 */
 
 
+void Blink(void)
+{
+    switch (currentMode)
+    {
+        case MODE_STATIC:
+            /* 使光标闪烁 */
+            break;
+        case MODE_TIMER:    /* 与counter使用同一个更新函数 */
+        case MODE_COUNTER:
+            /* 使时间闪烁 */
+            break;
+        default:
+            /* 无闪烁 */
+            break;
+    }
+}
+
+void SwitchTimeUnit(bit goRight)
+{
+}
+
+void AddCurUnitTime(bit incCurUnit)
+{
+}
+
+void CurcorMove(byte direction)
+{
+}
+
 /*
  * 按键事件
  */
@@ -128,7 +160,7 @@ void KeyEvent(byte curKey, enumKeyEvent event)
 {
     switch (curKey)
     {
-        case KEY_SAVE:
+        case KEY_SAVE:	/* 这一系列按键值在按键模块中定义 */
             if (isEditing)
                 isEditing= 0;       /* 显存数据实时更新，直接改变状态即可 */
             else
@@ -179,23 +211,6 @@ void KeyEvent(byte curKey, enumKeyEvent event)
     }
 }
 
-/*
- * 更改状态函数
- */
-void ChangeState(bit saving)
-{
-    if (isEditing)
-    {
-        if (saving)
-            ;
-        else if (/* 没有确定取消 */)
-            return;
-
-        /* 切换状态 */
-    }
-    else
-        /* 切换到编辑状态 */
-}
 
 /*
  * 更新图像
@@ -236,6 +251,8 @@ void UpdateTime()
         else
             TMI_GetRemainTime(&editingTime);
     }
+	
+	/* 转换时间为字符数组 */
     disArray[0] = (byte)editingTime.hour/10 + DIS_NUM0;
     disArray[1] = (byte)editingTime.hour%10 + DIS_NUM0;
     disArray[2] = DIS_COLON;
@@ -245,6 +262,7 @@ void UpdateTime()
     disArray[6] = (byte)editingTime.second/10 + DIS_NUM0;
     disArray[7] = (byte)editingTime.second%10 + DIS_NUM0;
 
+	/* 绘制 */
     GDI_DrawCharArray(disArray);
 }
 
@@ -298,6 +316,8 @@ void main()
         KDI_GetCurrentKey(&currentKey, &event);
         if (/* 有合法按键 */)
             KeyEvent(currentKey, event);
+
+        UpdateData();
     }
 }
 
