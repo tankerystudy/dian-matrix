@@ -17,8 +17,6 @@
 #include <其他文件>
 
 
-
-
 /********************************************************************/
 /* 全局变量定义 */
 enum Mode   {                   /* 模式种类 */
@@ -29,8 +27,7 @@ enum Mode   {                   /* 模式种类 */
     MODE_COUNT
 };
 
-
-byte graphData[128];            /* 显存数据 */
+byte graphData[LED_ROW][LED_LINE];  /* 显存数据 */
 enum Mode currentMode;          /* 当前模式 */
 bit isEditing;                  /* 是否正在修改状态 */
 bit needUpdate;                 /* 标志是否需要更新 */
@@ -60,13 +57,51 @@ structTime editingTime;         /* 正在修改的时间 */
 
 /* 初始化定时器为TIME_TIMER
  */
-void InitTimer();
+void InitTimer(void)
+{
+    TMOD = 0x01;     /* T0/T1,mode1 */ 
+    TH0 = 0xfc;      /* T0计数初值，定时2ms */
+    TL0 = 0x18;      /* T0用于刷新键盘 */
+}
+
+void InitInte(void)
+{
+    EA = 1;          /* 开中断 */
+    ET0 = 1;         /* 允许T0中断 */
+    EX0 = 1;         /* 允许外部中断0 */
+}
+
 
 /*
  * 初始化显存
  * 从EE中读取点阵数据到内存
  */
-void InitGraphMem();
+void InitGraphMem(void)
+{
+    
+}
+
+/* 全局初始化函数 */
+void InitMain(void)
+{    
+    /* 初始化全局定时器 */
+    InitTimer();
+
+    /* 中断初始化 */
+    InitInte();    
+    
+    /* 初始化显存 */
+    InitGraphMem();
+    
+    /* 初始化显卡驱动 */
+    GDI_Init(graphData);
+    
+    /* 初始化键盘驱动 */
+    KDI_Init();
+    
+    /* 初始化时间管理模块 */
+    TDI_Init();    
+}
 
 
 /********************************************************************/
@@ -75,7 +110,7 @@ void InitGraphMem();
 /*
  * 定时器中断函数（1ms）
  */
-void OnTimer()
+void OnTimer(void) interrupt 1 using 0
 {
     static byte reTCount= TIME_REFRESH/TIME_TIMER;      /* 行刷新时间计数*/
     static byte ksTCount= TIME_KEYSCAN/TIME_TIMER;      /* 键盘扫描时间计数 */
@@ -92,13 +127,14 @@ void OnTimer()
     {
         ksTCount= TIME_KEYSCAN/TIME_TIMER;
         /* 调用键盘驱动的键盘扫描函数 */
-		KDI_KeyScan();
+        KDI_Scan();
+        
     }
     if (--tcTCount == 0)
     {
         tcTCount= TIME_TIMECOUNT/TIME_TIMER;
         /* 调用时间管理模块的更新时间函数 */
-		TMI_UpdateTime();
+        TDI_Refresh();
     }
     if (--efTCount == 0)
     {
@@ -106,17 +142,21 @@ void OnTimer()
 
         /* 是编辑状态, 则编辑状态下的闪烁特效 */
         if (isEditing)
+        {
             /* 调用本模块的闪烁函数 */
 			Blink();
+        }
     }
 }
 
 /* 外部中断0 */
-void ExtInt0()
+void ExtInt0(void) interrupt 0 using 1
 {
     /* 循环切换模式 */
     if (++currentMode == MODE_COUNT)
+    {
         currentMode= MODE_STATIC;
+    }
 }
 
 
@@ -156,20 +196,22 @@ void CurcorMove(byte direction)
 /*
  * 按键事件
  */
-void KeyEvent(byte curKey, enumKeyEvent event)
+void KeyEvent(byte curKey, EnumKeyEventKind event)
 {
     switch (curKey)
     {
-        case KEY_SAVE:	/* 这一系列按键值在按键模块中定义 */
+        case KEY_YES:  //KEY_SAVE
             if (isEditing)
+            {
                 isEditing= 0;       /* 显存数据实时更新，直接改变状态即可 */
+            }
             else
             {
                 /* 将当前显存写入EE，为取消操作做准备 */
                 isEditing= 1;
             }
             break;
-        case KEY_CANCEL:
+        case KEY_NO:  //KEY_CANCEL
             if (isEditing)
             {
                 /* 取回写入EE的显存数据 */
@@ -177,7 +219,7 @@ void KeyEvent(byte curKey, enumKeyEvent event)
             }
             break;
         case KEY_OK:
-            if (currentMode == MODE_STATIC)
+            if (MODE_STATIC == currentMode)
             {
                 if (drawingLine)
                 {
@@ -185,26 +227,38 @@ void KeyEvent(byte curKey, enumKeyEvent event)
                     /* 直接画线 */
                 }
                 else
+                {
                     drawingLine = 1;
+                }
             }
             else
+            {
                 SwitchTimeUnit(/* 右移 */true);
+            }
             break;
         case KEY_UP:
-            currentMode == MODE_STATIC ?
+            if (MODE_STATIC == currentMode)
+            {
                 CurcorMove(/* 向上单位矢量 */) : AddCurUnitTime(/* 增加时间 */true);
+            }
             break;
         case KEY_DOWN:
-            currentMode == MODE_STATIC ?
+            if (MODE_STATIC == currentMode)
+            {
                 CurcorMove(/* 向下单位矢量 */) : AddCurUnitTime(/* 减少时间 */false);
+            }
             break;
-        case KEY_LEFT:
-            currentMode == MODE_STATIC ?
+        case KEY_LEFT:            
+            if (MODE_STATIC == currentMode)
+            {
                 CurcorMove(/* 向左单位矢量 */) : SwitchTimeUnit(/* 左移 */false);
+            }
             break;
         case KEY_RIGHT:
-            currentMode == MODE_STATIC ?
+            if (MODE_STATIC == currentMode)
+            {
                 CurcorMove(/* 向右单位矢量 */) : SwitchTimeUnit(/* 右移 */true);
+            }
             break;
         default:
             break;
@@ -281,7 +335,7 @@ void UpdateCom()
  * 更新所有
  * 需要更新时调用此函数，将更新需要的模式
  */
-void UpdateData()
+void UpdateData(void)
 {
     switch (currentMode)
     {
@@ -305,17 +359,20 @@ void UpdateData()
 
 void main()
 {
+    uchar ucCurrentKey = KEY_NULL;
+    EKeyEventKind eKeyEvent = Nothing;
+    
     /* 调用本模块初始化函数 */
-    /* 初始化显卡驱动 */
-    void GDI_Init(graphData);
-    /* 初始化时间管理模块 */
+    InitMain();
 
     while (1)
     {
         /* 调用键盘驱动的读取当前按键到currentKey */
-        KDI_GetCurrentKey(&currentKey, &event);
-        if (/* 有合法按键 */)
-            KeyEvent(currentKey, event);
+        KDI_GetCurrentKey(&ucCurrentKey, &eKeyEvent);
+        if (KEY_NULL != ucCurrentKey)
+        {
+            KeyEvent(ucCurrentKey, eKeyEvent);
+        }
 
         UpdateData();
     }

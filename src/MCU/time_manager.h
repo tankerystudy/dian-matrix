@@ -8,7 +8,7 @@
     extern "C" {
 #endif
 
-
+void TDI_Refresh(void);
 
 #ifdef __cplusplus
 }
