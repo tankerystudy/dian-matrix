@@ -66,7 +66,7 @@ byte I2CWrite(const byte* dataAddr, const byte length)
             if (j == IIC_OVERTIME)
                 return 2;
 
-            return I2CWrite(dataAddr+i, legth-i);
+            return I2CWrite(dataAddr+i, length-i);
         }
 
         if (!ASMI2CWriteByte(*(dataAddr + i)))

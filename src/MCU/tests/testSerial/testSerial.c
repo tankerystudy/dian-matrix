@@ -108,14 +108,9 @@ void main()
        for (x=0; x<DATA_LEN; x++)
         {
             CY= 0;
-<<<<<<< .mine
-    		//g_SerialArray[y][x] = ~(y+1);
+
     		g_SerialArray[y][x] = Character[y * LINE_LEN + x];
             GDI_ByteMapping(&g_SerialArray[y][x]);
-=======
-            g_SerialArray[y][x] = ~(y+1);
-            led_drv_InterfaceMap(&g_SerialArray[y][x]);
->>>>>>> .r59
         }
 
     while (1)

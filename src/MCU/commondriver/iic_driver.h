@@ -4,7 +4,7 @@
 // the I2C communication package, implement like file operations.
 #include "common_def.h"
 
-byte const IIC_OVERTIME = 100
+static byte const IIC_OVERTIME = 100;
 
 enum {
     I2CDEFAULT= 0x00,
