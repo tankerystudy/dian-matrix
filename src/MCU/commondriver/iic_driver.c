@@ -63,7 +63,6 @@ byte I2CWrite(const byte* dataAddr, const byte length)
         {
             // close and wait to response
             I2CClose();
-
             if (!I2COpen(currentAddress, I2CDEFAULT))
                 return 2;
         }
