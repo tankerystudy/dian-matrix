@@ -47,7 +47,7 @@ static void SetCurrentLine(uchar iCurrentLine);
   2010-11-10  Tankery          添加寄存器控制及寄存器时钟线控制
 
 *******************************************************************************/
-void GDI_Init(byte pbGraphMem[], byte bGraphLen)
+void GDI_Init(byte *pbGraphMem, byte bGraphLen)
 {
     /* 1.使能74HC38。 */
     LINE_EN = 0;    /* 低电平使能 */

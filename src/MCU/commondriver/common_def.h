@@ -5,8 +5,12 @@
 typedef unsigned char uchar;
 typedef uchar byte;
 
-sfr16 RCAP2 = 0xCA;     /* timer2 initial count */
-sbit BEEP = P1 ^ 0;
+sfr16   RCAP2   = 0xCA;     /* timer2 initial count */
+
+sbit    BEEP    = P1^0;
+sbit    LED1    = P1^3;
+sbit    LED2    = P1^2;
+sbit    LED3    = P1^1;
 
 void sleep(int time);
 

@@ -52,10 +52,10 @@ byte I2CWrite(const byte* dataAddr, const byte length)
 
     for (i = 0; i < length; i++)    // Sequential Write
     {
-        // if low 4 bit overflow, reopen and write in right addr.
+        // if low 4 bit overflow, close and wait to save previews data
         if ((currentAddress & 0x0f) == 0x00)
         {
-            // close and waite to response
+            // close and wait to response
             I2CClose();
             for(j= 0; j < IIC_OVERTIME; j++)
             {
@@ -65,8 +65,6 @@ byte I2CWrite(const byte* dataAddr, const byte length)
             }
             if (j == IIC_OVERTIME)
                 return 2;
-
-            return I2CWrite(dataAddr+i, length-i);
         }
 
         if (!ASMI2CWriteByte(*(dataAddr + i)))

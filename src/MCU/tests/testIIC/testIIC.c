@@ -6,6 +6,35 @@
 
 /*
     简体汉字点阵
+    字体：宋体   1个汉字
+    点阵：16x16
+    文本：给
+*/
+/*
+idata byte g_SerialArray[LED_LINE][LED_ROW] =
+{
+    0x10,0x40,//  0x02,0x00,
+    0x10,0x40,//  0x02,0x00,
+    0x20,0xA0,//  0x02,0x00,
+    0x21,0x10,//  0x02,0x00,
+    0x4A,0x08,//  0x7F,0xF8,
+    0xF4,0x06,//  0x02,0x08,
+    0x13,0xF8,//  0x02,0x08,
+    0x20,0x00,//  0x02,0x08,
+
+    0x40,0x00,//  0x02,0x08,  
+    0xFB,0xF8,//  0x04,0x08,
+    0x42,0x08,//  0x04,0x08,
+    0x02,0x08,//  0x08,0x08,
+    0x1A,0x08,//  0x08,0x08,
+    0xE2,0x08,//  0x10,0x88,
+    0x43,0xF8,//  0x20,0x50,
+    0x02,0x08//,  0x40,0x20
+};
+*/
+
+/*
+    简体汉字点阵
     字体：宋体   2个汉字
     点阵：16x16
     文本：给力
@@ -31,6 +60,7 @@ idata byte g_SerialArray[LED_LINE][LED_ROW] =
     0x43,0xF8,  0x20,0x50,
     0x02,0x08,  0x40,0x20
 };
+
 
 /*
 idata byte g_SerialArray[LED_LINE][LED_ROW] =
@@ -60,9 +90,7 @@ void main()
 {
     unsigned char x, y;
 
-    EA = 1;
-    EX0 = 1;        // ENABLE EXTERN INTERRUPT 0
-    IT0 = 1;        // EDGE-TRIGGERED INTERRUPT
+    LED1= LED2= LED3= 1;    // switch off 3 LEDs
     
     for (y=0; y < LED_LINE; y++)
     {
@@ -75,8 +103,28 @@ void main()
     // writing IIC
     if (I2COpen(0x00, I2CDEFAULT))
     {
-        I2CWrite(&g_SerialArray[0][0], (LED_LINE * LED_ROW));
+        x = I2CWrite(&g_SerialArray[0][0], (LED_LINE * LED_ROW));
+
+        switch (x)
+        {
+        case 1:
+            LED1 = 0;
+            break;
+        case 2:
+            LED2 = 0;
+            break;
+        case 3:
+            LED3 = 0;
+            break;
+        default:
+            break;
+        }
+
         I2CClose();
+    }
+    else
+    {
+        LED1 = LED2 = 0;
     }
 
     // clear array.
@@ -93,6 +141,10 @@ void main()
     {
         I2CReadOneTime(&g_SerialArray[0][0], (LED_LINE * LED_ROW));
         I2CClose();
+    }
+    else
+    {
+        LED2 = LED3 = 0;
     }
 
 	GDI_Init(&g_SerialArray[0][0], (LED_LINE * LED_ROW));
