@@ -1,5 +1,5 @@
 #include <reg52.h>
-#include "lic_driver.h"
+#include "iic_driver.h"
 
 
 static byte currentAddress;
@@ -37,22 +37,38 @@ bit I2COpen(const byte memAddr, const byte mode)
 // returns:
 //      0: write succes
 //      1: write byte failed
-//      2: page write will overflow
+//      2: page write overtime
 //      3: insufficient memory space (including the PAGE setting
 //          (A2A1P0) during Device Addressing)
 byte I2CWrite(const byte* dataAddr, const byte length)
 {
-    byte i;
+    byte i, j;
 
     if ((~currentAddress & 0x0f)+1 < length)    // low 4 bit overflow
     {
         if ((~currentAddress & 0xff)+1 < length)       // whole address overflow
             return 3;       // insufficient memory space
-        else
-            return 2;       // page write will overflow
     }
+
     for (i = 0; i < length; i++)    // Sequential Write
     {
+        // if low 4 bit overflow, reopen and write in right addr.
+        if ((currentAddress & 0x0f) == 0x00)
+        {
+            // close and waite to response
+            I2CClose();
+            for(j= 0; j < IIC_OVERTIME; j++)
+            {
+                if (I2COpen(currentAddress, I2CDEFAULT))
+                    break;
+                sleep(1);
+            }
+            if (j == IIC_OVERTIME)
+                return 2;
+
+            return I2CWrite(dataAddr+i, legth-i);
+        }
+
         if (!ASMI2CWriteByte(*(dataAddr + i)))
             return 1;
         currentAddress++;
