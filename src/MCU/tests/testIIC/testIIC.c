@@ -89,8 +89,9 @@ idata byte g_SerialArray[LED_LINE][LED_ROW] =
 void main()
 {
     unsigned char x, y;
+    byte const startAddr = 0x01;
 
-    LED1= LED2= LED3= 1;    // switch off 3 LEDs
+    LED1= LED2= LED3= 0;    // switch on 3 LEDs
     
     for (y=0; y < LED_LINE; y++)
     {
@@ -101,20 +102,23 @@ void main()
     }
 
     // writing IIC
-    if (I2COpen(0x00, I2CDEFAULT))
+    if (I2COpen(startAddr, I2CDEFAULT))
     {
         x = I2CWrite(&g_SerialArray[0][0], (LED_LINE * LED_ROW));
 
         switch (x)
         {
+        case 0:
+            LED1 = LED3 = 1;
+            break;
         case 1:
-            LED1 = 0;
+            LED1 = 1;
             break;
         case 2:
-            LED2 = 0;
+            LED2 = 1;
             break;
         case 3:
-            LED3 = 0;
+            LED3 = 1;
             break;
         default:
             break;
@@ -124,7 +128,7 @@ void main()
     }
     else
     {
-        LED1 = LED2 = 0;
+        LED1 = LED2 = 1;
     }
 
     // clear array.
@@ -137,14 +141,14 @@ void main()
     }
 
     // reading IIC
-    if (I2COpen(0x00, I2CREAD))
+    if (I2COpen(startAddr, I2CREAD))
     {
         I2CReadOneTime(&g_SerialArray[0][0], (LED_LINE * LED_ROW));
         I2CClose();
     }
     else
     {
-        LED2 = LED3 = 0;
+        LED2 = LED3 = 1;
     }
 
 	GDI_Init(&g_SerialArray[0][0], (LED_LINE * LED_ROW));

@@ -19,10 +19,19 @@ extern void ASMI2CReset(void);
 // return if open success
 bit I2COpen(const byte memAddr, const byte mode)
 {
+    byte i;
+
     currentMode = mode | 0xA0;              // add memorizer mode
     currentAddress = memAddr;
 
-    if (!ASMI2COpen(0xfe & currentMode))    // force using write mode
+    // wait to response
+    for(i= 0; i < IIC_OVERTIME; i++)
+    {
+        if (ASMI2COpen(0xfe & currentMode)) // force using write mode
+            break;
+        sleep(1);
+    }
+    if (i == IIC_OVERTIME)
         return 0;
     if (!ASMI2CWriteByte(currentAddress))   // write addr to move here
         return 0;
@@ -42,13 +51,10 @@ bit I2COpen(const byte memAddr, const byte mode)
 //          (A2A1P0) during Device Addressing)
 byte I2CWrite(const byte* dataAddr, const byte length)
 {
-    byte i, j;
+    byte i;
 
-    if ((~currentAddress & 0x0f)+1 < length)    // low 4 bit overflow
-    {
-        if ((~currentAddress & 0xff)+1 < length)       // whole address overflow
-            return 3;       // insufficient memory space
-    }
+    if ((~currentAddress & 0xff)+1 < length)       // whole address overflow
+        return 3;       // insufficient memory space
 
     for (i = 0; i < length; i++)    // Sequential Write
     {
@@ -57,13 +63,8 @@ byte I2CWrite(const byte* dataAddr, const byte length)
         {
             // close and wait to response
             I2CClose();
-            for(j= 0; j < IIC_OVERTIME; j++)
-            {
-                if (I2COpen(currentAddress, I2CDEFAULT))
-                    break;
-                sleep(1);
-            }
-            if (j == IIC_OVERTIME)
+
+            if (!I2COpen(currentAddress, I2CDEFAULT))
                 return 2;
         }
 
@@ -79,7 +80,12 @@ byte I2CWrite(const byte* dataAddr, const byte length)
 void I2CReadOneTime(byte* dataAddr, const byte length)
 {
     byte i;
-    for (i = 0; i < length - 1; i++)    // Sequential Read
+
+    if (length == 0)
+        return;
+
+    // Sequential Read, the last byte will be read alone
+    for (i = 0; i < length - 1; i++)
     {
         *(dataAddr+i) = ASMI2CReadByte();
         ASMI2CSendACK(1);       // Send ACK
