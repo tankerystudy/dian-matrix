@@ -14,9 +14,6 @@ void SerialRecv(void) interrupt 4
         /* close the receive interrupt, must been clear! */
         RI = 0;
 
-        // for test
-        LED2 = ~LED2;
-
         /* memory full, return */
         if (g_BufCursor == g_MemLen)
             return;

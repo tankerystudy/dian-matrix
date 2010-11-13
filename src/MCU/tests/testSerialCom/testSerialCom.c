@@ -1,9 +1,9 @@
 #include <reg52.h>
 #include "..\..\commondriver\common_def.h"
 #include "..\..\commondriver\serial_driver.h"
-#include "..\..\commondriver\graphics_driver.h"
 
 
+#define LED_MEM     8
 
 bit downloading;
 
@@ -14,31 +14,21 @@ idata byte g_SerialArray[LED_MEM];
 
 void ext_int0() interrupt  0
 {
-    downloading = !downloading;
-
-    if (downloading)
-        SerialInit(g_SerialArray, LED_MEM, 0);
-    else
-        GDI_Init(g_SerialArray, LED_MEM);
+    downloading = 1;
 }
 
 void main()
 {
-    unsigned char x, y;
+    unsigned int  blink;
 
     EA = 1;
     EX0 = 1;        // ENABLE EXTERN INTERRUPT 0
     IT0 = 1;        // EDGE-TRIGGERED INTERRUPT
 
-    for (y=0; y < LED_LINE; y++)
-       for (x=0; x < LED_ROW; x++)
-        {
-            g_SerialArray[y*LED_ROW + x] = ~(y*LED_ROW + x + 1);
-        }
+    SerialInit(g_SerialArray, LED_MEM, 0);
 
     downloading = 0;
-    GDI_Init(g_SerialArray, LED_MEM);
-    GDI_DisFormat();
+    LED0= LED1= LED2= LED3= 1;
 
     while (1)
     {
@@ -47,13 +37,21 @@ void main()
             if (SerialRead(g_SerialArray, LED_MEM) > 0)
             {
                 downloading = 0;
-                GDI_Init(g_SerialArray, LED_MEM);
-                GDI_DisFormat();
+
+                SerialWrite(g_SerialArray, LED_MEM);
+
+                LED0 = (0x08 & g_SerialArray[0])? 0:1;
+                LED1 = (0x04 & g_SerialArray[0])? 0:1;
+                LED2 = (0x02 & g_SerialArray[0])? 0:1;
+                LED3 = (0x01 & g_SerialArray[0])? 0:1;
             }
         }
-        else
-            GDI_Refresh();
 
+        if (++blink == 500)
+        {
+            blink = 0;
+       //     RED_LED = ~RED_LED;
+        }
         sleep(1);
     }
 }
