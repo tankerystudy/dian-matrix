@@ -3,30 +3,23 @@
 #include "..\..\commondriver\serial_driver.h"
 #include "..\..\commondriver\graphics_driver.h"
 
+
+
+bit downloading;
+
 /* serial data array */
-idata byte g_SerialArray[LED_LINE][LED_ROW];
+idata byte g_SerialArray[LED_MEM];
 
 
-void delay(int time)
-{
-    byte i;
-    do
-    {
-        for (i= 0; i < 250; i++)
-            ;
-    } while (--time != 0);
-}
 
 void ext_int0() interrupt  0
 {
+    downloading = !downloading;
 
-    SerialInit(&g_SerialArray[0][0], LED_ROW*LED_LINE, 0);
-
-    while (SerialRead(&g_SerialArray[0][0], LED_ROW*LED_LINE) < 0)
-        ;
-
-    led_drv_DisInit(&g_SerialArray[0][0], LED_ROW*LED_LINE);
-    led_drv_DisFormat();
+    if (downloading)
+        SerialInit(g_SerialArray, LED_MEM, 0);
+    else
+        GDI_Init(g_SerialArray, LED_MEM);
 }
 
 void main()
@@ -40,17 +33,28 @@ void main()
     for (y=0; y < LED_LINE; y++)
        for (x=0; x < LED_ROW; x++)
         {
-            g_SerialArray[y][x] = ~(y+1);
+            g_SerialArray[y*LED_ROW + x] = ~(y*LED_ROW + x + 1);
         }
 
-    led_drv_DisInit(&g_SerialArray[0][0], LED_LINE*LED_ROW);
-    led_drv_DisFormat();
+    downloading = 0;
+    GDI_Init(g_SerialArray, LED_MEM);
+    GDI_DisFormat();
 
     while (1)
     {
-        led_drv_Refresh();
+        if (downloading)
+        {
+            if (SerialRead(g_SerialArray, LED_MEM) > 0)
+            {
+                downloading = 0;
+                GDI_Init(g_SerialArray, LED_MEM);
+                GDI_DisFormat();
+            }
+        }
+        else
+            GDI_Refresh();
 
-        delay(1);
+        sleep(1);
     }
 }
 

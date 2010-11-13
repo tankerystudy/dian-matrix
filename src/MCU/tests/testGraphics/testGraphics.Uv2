@@ -9,6 +9,7 @@ File 1,2,<.\STARTUP.A51><STARTUP.A51> 0x0
 File 1,1,<.\testGraphics.c><testGraphics.c> 0x0 
 File 1,1,<..\..\commondriver\serial_driver.c><serial_driver.c> 0x0 
 File 1,1,<..\..\commondriver\graphics_driver.c><graphics_driver.c> 0x0 
+File 1,1,<..\..\commondriver\common_def.c><common_def.c> 0x0 
 
 
 Options 1,0,0  // Target 'Target 1'

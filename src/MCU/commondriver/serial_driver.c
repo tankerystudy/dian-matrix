@@ -4,21 +4,23 @@
 /* definition of functions declared in Serial_driver.h */
 static byte *g_SerialBuf;
 static byte g_MemLen;
-static int g_BufCursor;
+static byte g_BufCursor;
 
 /* receive data from SBUF */
-void SerialRecv(void) interrupt 4 using 3
+void SerialRecv(void) interrupt 4
 {
-    /* memory full, return */
-    if (g_BufCursor == g_MemLen)
-        return;
-
     if (RI)                         /* if receive interrupt is triggered */
     {
-        ES = 0;                     /* close the Serial Port interrupt */
+        /* close the receive interrupt, must been clear! */
+        RI = 0;
+
+        // for test
+        LED2 = ~LED2;
+
+        /* memory full, return */
+        if (g_BufCursor == g_MemLen)
+            return;
         *(g_SerialBuf + (g_BufCursor++)) = SBUF;
-        RI = 0;                     /* close the receive interrupt */
-        ES = 1;
     }
 }
 
@@ -27,7 +29,7 @@ byte SerialRead(byte *Buffer, byte BufLen)
     /* if the memory is not full or the BufLen is too short */
     if (g_BufCursor < g_MemLen || BufLen < g_BufCursor)
     {
-        return -1;
+        return 0;
     }
  
     Buffer = g_SerialBuf;
@@ -35,18 +37,24 @@ byte SerialRead(byte *Buffer, byte BufLen)
 }
 
 /* Send a string to SBUF */
-void SerialWrite(byte *pucString, byte ucLen) 
+bit SerialWrite(byte *pucString, byte ucLen) 
 {
-    byte ucStrlen= ucLen;
-    byte i;
+    byte index;
+    int  r;
 
-    for (i= 0; i < ucLen; i++)
+    for (index= 0; index < ucLen; index++)
     {
-        SBUF = *(pucString + i);
-        while (TI == 0)         /* wait for transmit interrupt */  
-            ;                   /* do nothing */
-        TI= 1;
+        SBUF = *(pucString + index);
+
+        // wait to response
+        r = SERIAL_OVERTIME;
+        while((TI == 0) && (--r != 0))
+            ;
+        TI = 0;
+        if (r == 0)
+            return 0;
     }
+    return 1;
 }
 
 /* initialization of Serial */
@@ -58,7 +66,9 @@ void SerialInit(byte *pucSerialMem, byte ucMemLen, bit isMode0)
 
     if (isMode0)
     {
-        SCON = 0x10;
+        SCON = 0x10;        // UART is mode 0
+        ES = 0;             // Close Serial Interrupt
+        PS = 0;
     }
     else
     {
@@ -66,7 +76,7 @@ void SerialInit(byte *pucSerialMem, byte ucMemLen, bit isMode0)
         RCAP2 = 0xFFD9;     // Set the original start time
         IE |= 0x90;         // Enable Serial Interrupt
         T2CON = 0x34;       // timer 2 run
-        ES = 1;
+        PS = 1;
     }
 }
 

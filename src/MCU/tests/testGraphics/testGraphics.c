@@ -10,7 +10,7 @@
     文本：给力
 */
 
-idata byte g_SerialArray[LED_LINE][LED_ROW] =
+idata byte g_SerialArray[LED_MEM] =
 {
     0x10,0x40,  0x02,0x00,
     0x10,0x40,  0x02,0x00,
@@ -55,16 +55,6 @@ idata byte g_SerialArray[LED_LINE][LED_ROW] =
 };*/
 
 
-void delay(int time)
-{
-    byte i;
-    do
-    {
-        for (i= 0; i < 250; i++)
-            ;
-    } while (--time != 0);
-}
-
 void main()
 {
     unsigned char x, y;
@@ -77,21 +67,19 @@ void main()
    {
 	   for (x=0; x < LED_ROW; x++)
         {
-    		//g_SerialArray[y][x] = ~(y+1);
-    		//g_SerialArray[y][x] = Character2[LED_ROW * y + x];
-			g_SerialArray[y][x] = ~g_SerialArray[y][x];
-            //GDI_ByteMapping(&g_SerialArray[y][x]);
+    		//g_SerialArray[y*LED_ROW + x] = ~(y*LED_ROW + x + 1);
+			g_SerialArray[y*LED_ROW + x] = ~g_SerialArray[y*LED_ROW + x];
     	}
    }
 
-	GDI_Init(&g_SerialArray[0][0], (LED_LINE * LED_ROW));
+	GDI_Init(g_SerialArray, LED_MEM);
     GDI_DisFormat();
 
     while (1)
     {
     	GDI_Refresh();
 
-        delay(1);
+        sleep(1);
     }
 }
 
