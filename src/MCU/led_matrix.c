@@ -72,7 +72,7 @@ void InitTimer(void)
 {
     TMOD = 0x01;     /* T0/T1,mode1 */ 
     TH0 = 0xfc;      /* T0计数初值，定时2ms */
-    TL0 = 0x18;      /* T0用于刷新键盘 */\
+    TL0 = 0x18;      /* T0用于刷新键盘 */
 
     return;
 }
