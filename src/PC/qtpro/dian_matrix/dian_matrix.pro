@@ -26,7 +26,7 @@ CONFIG(debug, debug|release) {
 SOURCES     += DianMatrix.cpp
 
 # Output
-TARGET       = 
+TARGET       = dian_matrix
 DESTDIR      = ./bin
 OBJECTS_DIR  = ./obj
 MOC_DIR      = ./moc
