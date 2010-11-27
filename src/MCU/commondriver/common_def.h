@@ -5,6 +5,7 @@
 typedef unsigned char uchar;
 typedef uchar byte;
 
+sfr T2MOD = 0xC9;           /* Timer2 的方式控制寄存器 */
 sfr16   RCAP2   = 0xCA;     /* timer2 initial count */
 
 sbit    BEEP    = P1^0;

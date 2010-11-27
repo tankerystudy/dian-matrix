@@ -22,7 +22,7 @@ $NOMOD51
 ;  at processor reset can be defined:
 ;
 ;               ; the absolute start-address of IDATA memory is always 0
-IDATALEN        EQU     80H     ; the length of IDATA memory in bytes.
+IDATALEN        EQU     100H     ; the length of IDATA memory in bytes.
 ;
 XDATASTART      EQU     0H      ; the absolute start-address of XDATA memory
 XDATALEN        EQU     0H      ; the length of XDATA memory in bytes.

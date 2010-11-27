@@ -17,10 +17,10 @@ sbit RES_EN = P1^4;
 sbit RES_CLK = P3^3;
 
 /* 显存和显存大小 */
-static uchar *g_bGraphMem;
+static idata uchar *g_bGraphMem;
 static byte g_bGraphLen;
 
-static void LineRefresh(byte *bData, uchar iCurrentLine);
+//static void LineRefresh(byte *bData, uchar iCurrentLine);
 static void SetCurrentLine(uchar iCurrentLine);
 //static void ByteMapping(byte *bData);
 
@@ -47,7 +47,7 @@ static void SetCurrentLine(uchar iCurrentLine);
   2010-11-10  Tankery          添加寄存器控制及寄存器时钟线控制
 
 *******************************************************************************/
-void GDI_Init(byte *pbGraphMem, byte bGraphLen)
+void GDI_Init(byte idata *pbGraphMem, byte bGraphLen)
 {
     /* 1.使能74HC38。 */
     LINE_EN = 0;    /* 低电平使能 */
@@ -63,8 +63,10 @@ void GDI_Init(byte *pbGraphMem, byte bGraphLen)
     /* 4.设置串口模式0，用于传送数据。 */
     /* 调用串口驱动的接口 */
     SerialInit(g_bGraphMem, g_bGraphLen, 1);
+	LED3 = 0;
+		while(1);
 
-    return;
+  return;
 }
 
 /*******************************************************************************
@@ -193,7 +195,7 @@ void GDI_Refresh(void)
   2010-11-10  Tankery          补偿一个时钟周期，使正确数据锁存
 
 *******************************************************************************/
-static void LineRefresh(byte *bData, uchar iCurrentLine)
+void LineRefresh(byte *bData, uchar iCurrentLine)
 {
     /* 关闭行显 */
     LINE_EN = 1;

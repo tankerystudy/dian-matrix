@@ -69,11 +69,31 @@ void SerialInit(byte *pucSerialMem, byte ucMemLen, bit isMode0)
     }
     else
     {
-        SCON = 0x50;        // UART is mode 1, 8 bit data, allow receive
+        /*SCON = 0x50;        // UART is mode 1, 8 bit data, allow receive
         RCAP2 = 0xFFD9;     // Set the original start time
         IE |= 0x90;         // Enable Serial Interrupt
         T2CON = 0x34;       // timer 2 run
-        PS = 1;
+        PS = 1;*/
+        ES = 0;
+        TR2 = 0;
+        
+        PCON = 0x00;
+        T2MOD = 0X00;
+        T2CON = 0x30;
+        SCON = 0x50;
+        
+        RCAP2H = 0xff;
+        RCAP2L = 0xd9;
+        
+        TH2 = 0xff;
+        TL2 = 0xd9;
+        
+        REN =1;
+        TI = 0;
+        RI = 0;
+        ES = 1;
     }
+	LED2 = 0;
+	return;
 }
 
