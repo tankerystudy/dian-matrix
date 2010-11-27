@@ -24,7 +24,7 @@ DataManager::~DataManager(void)
 bool DataManager::readBool(int x, int y) const
 {
     int chCount= x/8;               // switch to the x-index of char
-    int restBit= x - chCount*8;
+    int restBit= x%8;
 
     // current char = matrixData[chChount][y]
     char curChar= *(matrixData + (dataWidth*y + chCount));
@@ -38,7 +38,8 @@ bool DataManager::readBool(int x, int y) const
 void DataManager::writeBool(int x, int y, bool bValue)
 {
     int chCount= x/8;               // switch to the x-index of char
-    int restBit= x - chCount*8;
+    int restBit= x%8;
+
     // get current char matrixData[chChount][y]
     unsigned char &curChar= *(matrixData + (dataWidth*y + chCount));
 
