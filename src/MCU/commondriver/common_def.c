@@ -17,4 +17,5 @@ void sleep(int time)
         for (i= 0; i < 250; i++)
             ;
     } while (--time != 0);
+	LED2 = 0;
 }

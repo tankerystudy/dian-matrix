@@ -2,7 +2,6 @@
 #include "common_def.h"
 #include "time_manager.h"
 
-
 /* œ‘¥Ê∫Õœ‘¥Ê¥Û–° */
 static uchar *g_bGraphMem;
 static byte g_bGraphLen;

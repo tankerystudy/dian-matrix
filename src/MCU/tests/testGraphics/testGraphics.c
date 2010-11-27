@@ -123,34 +123,38 @@ void main()
 
    	LED1 = 1;
 	LED2 = 1;
-	LED3 = 1;
+	LED3 = 1;	
+
+//	sleep(800);		// sleep 500ms to make LED blink (if possible) clear
+//	LED1 = 0;
+//	while(1);
 
     //InitTimer();
 
 	//GDI_Init(&g_SerialArray[0][0], LED_MEM);
 	GDI_Init(&g_SerialArray[0][0], LED_MEM);
-	LED1 = 0;
-	while(1);
+//	LED1 = 0;
+//	while(1);
 
     while (1)
     {
         for (i = 0; i < LED_ROW; i++)
         {
 //			if( CurrentLine == 8 )
-				DisMem[i] = 0xaa;
+//				DisMem[i] = 0xaa;
 //			else
-//            	DisMem[i] = g_SerialArray[CurrentLine][i];
+            	DisMem[i] = g_SerialArray[CurrentLine][i];
             //GDI_ByteMapping(&DisMem[i]);
-			LED1 = 0;
+//			LED1 = 0;
         }
         
     	LineRefresh(DisMem, CurrentLine);
-	LED2 = 0;
-     if (LED_LINE == ++CurrentLine)
+//	LED2 = 0;
+     	if (LED_LINE == ++CurrentLine)
         {
             CurrentLine = 0;
         }
-		LED3 = 0;
+//		LED3 = 0;
     }
 }
 

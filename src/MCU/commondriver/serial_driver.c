@@ -2,7 +2,7 @@
 #include "Serial_driver.h"
 
 /* definition of functions declared in Serial_driver.h */
-static byte *g_SerialBuf;
+static idata byte *g_SerialBuf;
 static byte g_MemLen;
 static byte g_BufCursor;
 
@@ -93,7 +93,7 @@ void SerialInit(byte *pucSerialMem, byte ucMemLen, bit isMode0)
         RI = 0;
         ES = 1;
     }
-	LED2 = 0;
+	LED3 = 0;
 	return;
 }
 

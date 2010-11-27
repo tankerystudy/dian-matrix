@@ -27,7 +27,7 @@ enum Mode   {                   /* 模式种类 */
     MODE_COUNT
 };
 
-byte graphData[LED_LINE][LED_ROW];  /* 显存数据 */
+idata byte graphData[LED_LINE][LED_ROW];  /* 显存数据 */
 enum Mode currentMode;          /* 当前模式 */
 bit isEditing;                  /* 是否正在修改状态 */
 bit needUpdate;                 /* 标志是否需要更新 */
@@ -142,7 +142,7 @@ void InitMain(void)
 /*
  * 定时器中断函数（1ms）
  */
-void OnTimer(void) interrupt 1 using 0
+void OnTimer(void) interrupt 1
 {
     static byte reTCount= TIME_REFRESH/TIME_TIMER;      /* 行刷新时间计数*/
     static byte ksTCount= TIME_KEYSCAN/TIME_TIMER;      /* 键盘扫描时间计数 */
@@ -160,7 +160,6 @@ void OnTimer(void) interrupt 1 using 0
         ksTCount= TIME_KEYSCAN/TIME_TIMER;
         /* 调用键盘驱动的键盘扫描函数 */
         KDI_Scan();
-        
     }
     if (--tcTCount == 0)
     {
@@ -183,14 +182,40 @@ void OnTimer(void) interrupt 1 using 0
     return;
 }
 
+/* 用LED灯指示当前工作状态 */
+static void ModeState(enum Mode mode)
+{
+    switch (mode)
+    {
+        case MODE_STATIC:
+            LED1 = 0;
+            break;
+        case MODE_TIMER:
+            LED2 = 0;
+            break;
+        case MODE_COUNTER:
+            LED3 = 0;
+            break;
+        case MODE_DOWNLOAD:
+            LED1 = 0;
+            LED1 = 0;
+            LED1 = 0;
+            break;
+        default:
+            break;
+    }
+    return;
+}
+
 /* 外部中断0 */
-void ExtInt0(void) interrupt 0 using 1
+void ExtInt0(void) interrupt 0
 {
     /* 循环切换模式 */
     if (++currentMode == MODE_COUNT)
     {
         currentMode= MODE_STATIC;
     }
+    ModeState(currentMode);
 
     return;
 }

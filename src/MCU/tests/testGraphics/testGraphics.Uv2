@@ -101,7 +101,7 @@ Options 1,0,0  // Target 'Target 1'
  LX51PDB ()
  LX51BIB ()
  LX51DAB ()
- LX51IDB (0x00)
+ LX51IDB ()
  LX51PRC ()
  LX51STK ()
  LX51COS ()

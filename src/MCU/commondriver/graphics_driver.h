@@ -12,7 +12,7 @@
 #define LED_MEM   (LED_LINE * LED_ROW)
 
 
-void GDI_Init(uchar idata pbGraphMem[], byte bGraphLen);
+void GDI_Init(uchar pbGraphMem[], byte bGraphLen);
 void GDI_ByteMapping(byte *bData);
 void GDI_DisFormat(void);
 void LineRefresh(byte *bData, uchar iCurrentLine);
