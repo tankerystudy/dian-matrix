@@ -4,7 +4,7 @@
 #include "..\..\commondriver\graphics_driver.h"
 #include "..\..\painter.h"
 
-byte idata g_SerialArray[LED_LINE][LED_ROW] =
+/*byte idata g_SerialArray[LED_LINE][LED_ROW] =
 {    
     //1.LOVE
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
@@ -23,7 +23,10 @@ byte idata g_SerialArray[LED_LINE][LED_ROW] =
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-};
+};*/
+
+byte idata g_SerialArray[LED_LINE][LED_ROW];
+
 
 /* µ„’ÛΩ· ¯ */
 
@@ -31,11 +34,13 @@ byte idata g_SerialArray[LED_LINE][LED_ROW] =
 
 void main()
 {
-    uchar i;
+    //uchar i;
     uchar CurrentLine = 0;
-    byte DisMem[LED_ROW];
+    //byte DisMem[LED_ROW];
 
-    byte numArray[] = {0, 1, 2, 3};
+    //23:59:59
+    byte numArray[] = 
+    {LIB_NUM_2,LIB_NUM_3,LIB_COLON,LIB_NUM_5,LIB_NUM_9,LIB_COLON,LIB_NUM_5,LIB_NUM_9};
 
    	LED1 = 1;
 	LED2 = 1;
@@ -44,9 +49,10 @@ void main()
 	GDI_Init(&g_SerialArray[0][0], LED_MEM);
     PainterInit(&g_SerialArray[0][0], LED_ROW);
 
-    PainterDrawString(numArray, 4, 2, 0, PM_COPY);
-    PainterDrawCursor(30, 5, 3, PM_COPY);
+    PainterDrawString(numArray, 8, 0, 0, PM_COPY);
+    //PainterDrawCursor(30, 5, 3, PM_COPY);
 
+    GDI_DisFormat();
     while (1)
     {
         GDI_Refresh();
