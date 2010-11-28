@@ -1,6 +1,6 @@
 #ifndef __SERIAL_DRIVER_H__
 #define __SERIAL_DRIVER_H__
-#include "..\..\commondriver\common_def.h"
+#include "common_def.h"
 
 #define SERIAL_OVERTIME 0xffff
 

@@ -1,0 +1,126 @@
+C51 COMPILER V7.20   SERIAL_DRIVER                                                         11/28/2010 22:47:40 PAGE 1   
+
+
+C51 COMPILER V7.20, COMPILATION OF MODULE SERIAL_DRIVER
+OBJECT MODULE PLACED IN .\serial_driver.obj
+COMPILER INVOKED BY: D:\Program Files\seedclass\Keil\C51\BIN\C51.EXE ..\..\commondriver\serial_driver.c BROWSE DEBUG OBJ
+                    -ECTEXTEND PRINT(.\serial_driver.lst) OBJECT(.\serial_driver.obj)
+
+line level    source
+
+   1          #include <reg52.h>
+   2          #include "common_def.h"
+   3          #include "serial_driver.h"
+   4          
+   5          /* definition of functions declared in Serial_driver.h */
+   6          static idata byte *g_SerialBuf;
+   7          static byte g_MemLen;
+   8          static byte g_BufCursor;
+   9          
+  10          /* receive data from SBUF */
+  11          void SerialRecv(void) interrupt 4
+  12          {
+  13   1          if (RI)                         /* if receive interrupt is triggered */
+  14   1          {
+  15   2              /* close the receive interrupt, must been clear! */
+  16   2              RI = 0;
+  17   2      
+  18   2              /* memory full, return */
+  19   2              if (g_BufCursor == g_MemLen)
+  20   2                  return;
+  21   2              *(g_SerialBuf + (g_BufCursor++)) = SBUF;
+  22   2          }
+  23   1      }
+  24          
+  25          byte SerialRead(byte *Buffer, byte BufLen)
+  26          {
+  27   1          /* if the memory is not full or the BufLen is too short */
+  28   1          if (g_BufCursor < g_MemLen || BufLen < g_BufCursor)
+  29   1          {
+  30   2              return 0;
+  31   2          }
+  32   1       
+  33   1          Buffer = g_SerialBuf;
+  34   1          return g_MemLen;
+  35   1      }
+  36          
+  37          /* Send a string to SBUF */
+  38          bit SerialWrite(byte *pucString, byte ucLen) 
+  39          {
+  40   1          byte index;
+  41   1          int  r;
+  42   1      
+  43   1          for (index= 0; index < ucLen; index++)
+  44   1          {
+  45   2              SBUF = *(pucString + index);
+  46   2      
+  47   2              // wait to response
+  48   2              r = SERIAL_OVERTIME;
+  49   2              while((TI == 0) && (--r != 0))
+  50   2                  ;
+  51   2              TI = 0;
+  52   2              if (r == 0)
+  53   2                  return 0;
+  54   2          }
+C51 COMPILER V7.20   SERIAL_DRIVER                                                         11/28/2010 22:47:40 PAGE 2   
+
+  55   1          return 1;
+  56   1      }
+  57          
+  58          /* initialization of Serial */
+  59          void SerialInit(byte *pucSerialMem, byte ucMemLen, bit isMode0)
+  60          {
+  61   1          g_SerialBuf= pucSerialMem;
+  62   1          g_MemLen = ucMemLen;            
+  63   1          g_BufCursor = 0;
+  64   1      
+  65   1          if (isMode0)
+  66   1          {
+  67   2              SCON = 0x10;        // UART is mode 0
+  68   2              ES = 0;             // Close Serial Interrupt
+  69   2              PS = 0;
+  70   2          }
+  71   1          else
+  72   1          {
+  73   2              /*SCON = 0x50;        // UART is mode 1, 8 bit data, allow receive
+  74   2              RCAP2 = 0xFFD9;     // Set the original start time
+  75   2              IE |= 0x90;         // Enable Serial Interrupt
+  76   2              T2CON = 0x34;       // timer 2 run
+  77   2              PS = 1;*/
+  78   2              ES = 0;
+  79   2              TR2 = 0;
+  80   2              
+  81   2              PCON = 0x00;
+  82   2              T2MOD = 0X00;
+  83   2              T2CON = 0x30;
+  84   2              SCON = 0x50;
+  85   2              
+  86   2              RCAP2H = 0xff;
+  87   2              RCAP2L = 0xd9;
+  88   2              
+  89   2              TH2 = 0xff;
+  90   2              TL2 = 0xd9;
+  91   2              
+  92   2              REN =1;
+  93   2              TI = 0;
+  94   2              RI = 0;
+  95   2              ES = 1;
+  96   2          }
+  97   1      
+  98   1              return;
+  99   1      }
+ 100          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    213    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      2       3
+   IDATA SIZE       =      3    ----
+   BIT SIZE         =   ----       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

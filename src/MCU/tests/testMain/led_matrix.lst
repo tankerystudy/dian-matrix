@@ -1,0 +1,601 @@
+C51 COMPILER V7.20   LED_MATRIX                                                            11/28/2010 23:05:34 PAGE 1   
+
+
+C51 COMPILER V7.20, COMPILATION OF MODULE LED_MATRIX
+OBJECT MODULE PLACED IN .\led_matrix.obj
+COMPILER INVOKED BY: D:\Program Files\seedclass\Keil\C51\BIN\C51.EXE ..\..\led_matrix.c BROWSE DEBUG OBJECTEXTEND PRINT(
+                    -.\led_matrix.lst) OBJECT(.\led_matrix.obj)
+
+line level    source
+
+   1          /*
+   2           * MainControler.c
+   3           *
+   4           * 这是主控程序，负责整个程序的控制和执行。main函数也在这个里面。
+   5           *
+   6           * Author:  tankery.chen@gmail.com
+   7           *
+   8           * Copyleft@2010, Coogle@DianGroup
+   9           */
+  10          /* 通用驱动源文件放在commondriver文件夹中 */
+  11          #include "commondriver/graphics_driver.h"
+  12          //#include "commondriver/iic_driver.h"
+  13          #include "commondriver/keyboard_driver.h"
+  14          #include "commondriver/serial_driver.h"
+  15          #include "painter.h"
+  16          //#include "com_driver.h"
+  17          #include "time_manager.h"
+  18          
+  19          /********************************************************************/
+  20          /* 全局变量定义 */
+  21          idata byte graphData[LED_LINE][LED_ROW];  /* 显存数据 */
+  22          eMode currentMode;          /* 当前模式 */
+  23          bit isEditing;                  /* 是否正在修改状态 */
+  24          bit needUpdate;                 /* 标志是否需要更新 */
+  25          bit drawingLine;                /* 标志是否正在画线 */
+  26          
+  27          uchar blinkTopLeft;          /* 闪烁区域的左上角 */
+  28          uchar blinkBottomRight;      /* 闪烁区域的右下角 */
+  29          uchar cursor;                /* 当前光标位置 */
+  30          uchar preCursor;             /* 先前光标位置 */
+  31          uchar firstPoint;            /* 直线的第一点 */
+  32          
+  33          stTime editingTime;          /* 正在修改的时间 */
+  34          e_TimeUnit g_CurrentTimeUnit;      /* 正在编辑的时间单元 */
+  35          
+  36          #define TIME_TIMER      1       /* 定义定时器时间 */
+  37          /* 初始化定时器为2ms
+  38           * 这样可以使屏幕的刷新时间为2*16= 32ms
+  39           * 约31帧/s
+  40           */
+  41          #define TIME_REFRESH    2       /* 在显卡驱动中 *//* 定义行扫描时间为2ms */
+  42          #define TIME_KEYSCAN    20      /* 在键盘驱动中 *//* 定义键盘扫描时间间隔20ms */
+  43          #define TIME_EFFECTS    400     /* 在绘图模块中 *//* 定义特效改变时间为400ms */
+  44          #define TIME_TIMECOUNT  1000    /* 在时间管理模块中 *//* 定义台签时间更新时间为1s，即台签时间精确到秒*/
+  45          
+  46          
+  47          /********************************************************************/
+  48          /* 初始化函数 */
+  49          
+  50          /* 初始化全局变量 */
+  51          void InitGlobal(void)
+  52          {
+  53   1          currentMode = MODE_STATIC;
+  54   1          LED1 = 0;
+C51 COMPILER V7.20   LED_MATRIX                                                            11/28/2010 23:05:34 PAGE 2   
+
+  55   1          LED2 = 1;
+  56   1          LED3 = 1;
+  57   1          
+  58   1          isEditing = 0;
+  59   1          needUpdate = 0;
+  60   1          drawingLine = 0;
+  61   1      
+  62   1          /* 时间 */
+  63   1          editingTime.hour = 0;
+  64   1          editingTime.minute = 0;
+  65   1          editingTime.second = 0;
+  66   1      
+  67   1          g_CurrentTimeUnit = HOUR;
+  68   1      
+  69   1          return;
+  70   1      }
+  71          
+  72          /* 初始化定时器为TIME_TIMER
+  73           */
+  74          void InitTimer(void)
+  75          {
+  76   1          TMOD = 0x01;     /* T0/T1,mode1 */ 
+  77   1          TH0 = 0xfc;      /* T0计数初值，定时2ms */
+  78   1          TL0 = 0x18;      /* T0用于刷新键盘 */
+  79   1      
+  80   1          return;
+  81   1      }
+  82          
+  83          void InitInte(void)
+  84          {
+  85   1          EA = 1;          /* 开中断 */
+  86   1          ET0 = 1;         /* 允许T0中断 */
+  87   1          EX0 = 1;         /* 允许外部中断0 */
+  88   1      
+  89   1          return;
+  90   1      }
+  91          
+  92          
+  93          /*
+  94           * 初始化显存
+  95           * 从EE中读取点阵数据到内存
+  96           */
+  97          void InitGraphMem(void)
+  98          {    
+  99   1          byte x,y;
+ 100   1      
+ 101   1          for (y=0; y < LED_LINE; y++)
+ 102   1          {
+ 103   2              for (x=0; x < LED_ROW; x++)
+ 104   2              {
+ 105   3                  graphData[y][x] = 0xff;
+ 106   3              }
+ 107   2          }
+ 108   1          /* 从EE中读取点阵数据到内存 */
+ 109   1          /* graphData = ; */
+ 110   1          
+ 111   1          return;
+ 112   1      }
+ 113          
+ 114          /* 全局初始化函数 */
+ 115          void InitMain(void)
+ 116          {    
+C51 COMPILER V7.20   LED_MATRIX                                                            11/28/2010 23:05:34 PAGE 3   
+
+ 117   1          /* 初始化全局变量 */
+ 118   1          InitGlobal();
+ 119   1          
+ 120   1          /* 初始化全局定时器 */
+ 121   1          InitTimer();
+ 122   1      
+ 123   1          /* 中断初始化 */
+ 124   1          InitInte();    
+ 125   1          
+ 126   1          /* 初始化显存 */
+ 127   1          InitGraphMem();
+ 128   1          
+ 129   1          /* 初始化键盘驱动 */
+ 130   1          KDI_Init();
+ 131   1          
+ 132   1          /* 初始化显卡驱动 */
+ 133   1          GDI_Init(graphData, LED_MEM);   
+*** WARNING C182 IN LINE 133 OF ..\..\LED_MATRIX.C: pointer to different objects
+ 134   1      
+ 135   1          /* 初始化 */
+ 136   1          PainterInit(graphData, LED_ROW);
+*** WARNING C182 IN LINE 136 OF ..\..\LED_MATRIX.C: pointer to different objects
+ 137   1          
+ 138   1          /* 初始化时间管理模块 */
+ 139   1          TMI_Init(graphData, LED_MEM, &editingTime, &currentMode);
+*** WARNING C182 IN LINE 139 OF ..\..\LED_MATRIX.C: pointer to different objects
+ 140   1      
+ 141   1          return;
+ 142   1      }
+ 143          
+ 144          void Blink(void)
+ 145          {
+ 146   1          switch (currentMode)
+ 147   1          {
+ 148   2              case MODE_STATIC:
+ 149   2                  /* 使光标闪烁 */
+ 150   2                  break;
+ 151   2              case MODE_TIMER:    /* 与counter使用同一个更新函数 */
+ 152   2              case MODE_COUNTER:
+ 153   2                  /* 使时间闪烁 */
+ 154   2                  break;
+ 155   2              default:
+ 156   2                  /* 无闪烁 */
+ 157   2                  break;
+ 158   2          }
+ 159   1      
+ 160   1          return;
+ 161   1      }
+ 162          
+ 163          /********************************************************************/
+ 164          /* 中断函数 */
+ 165          
+ 166          /*
+ 167           * 定时器中断函数（1ms）
+ 168           */
+ 169          void OnTimer(void) interrupt 1
+ 170          {
+ 171   1          static byte reTCount= TIME_REFRESH/TIME_TIMER;      /* 行刷新时间计数*/
+ 172   1          static byte ksTCount= TIME_KEYSCAN/TIME_TIMER;      /* 键盘扫描时间计数 */
+ 173   1          static byte tcTCount= TIME_TIMECOUNT/TIME_TIMER;    /* 台签时间更新时间计数 */
+ 174   1          static byte efTCount= TIME_EFFECTS/TIME_TIMER;      /* 特效更改时间计数 */
+ 175   1      
+C51 COMPILER V7.20   LED_MATRIX                                                            11/28/2010 23:05:34 PAGE 4   
+
+ 176   1          if (--reTCount == 0)
+ 177   1          {
+ 178   2              reTCount= TIME_REFRESH/TIME_TIMER;
+ 179   2              /* 调用显卡驱动的刷新行函数 */
+ 180   2              GDI_Refresh();
+ 181   2          }
+ 182   1          if (--ksTCount == 0)
+ 183   1          {
+ 184   2              ksTCount= TIME_KEYSCAN/TIME_TIMER;
+ 185   2              /* 调用键盘驱动的键盘扫描函数 */
+ 186   2              KDI_Scan();
+ 187   2          }
+ 188   1          if (--tcTCount == 0)
+ 189   1          {
+ 190   2              tcTCount= TIME_TIMECOUNT/TIME_TIMER;
+ 191   2              /* 调用时间管理模块的更新时间函数 */
+ 192   2              TMI_Refresh();
+ 193   2          }
+ 194   1          if (--efTCount == 0)
+ 195   1          {
+ 196   2              efTCount= TIME_EFFECTS/TIME_TIMER;
+ 197   2      
+ 198   2              /* 是编辑状态, 则编辑状态下的闪烁特效 */
+ 199   2              if (isEditing)
+ 200   2              {
+ 201   3                  /* 调用本模块的闪烁函数 */
+ 202   3                              Blink();
+ 203   3              }
+ 204   2          }
+ 205   1      
+ 206   1          return;
+ 207   1      }
+ 208          
+ 209          /* 用LED灯指示当前工作状态 */
+ 210          static void ModeState(eMode mode)
+ 211          {
+ 212   1          switch (mode)
+ 213   1          {
+ 214   2              case MODE_STATIC:
+ 215   2                  LED1 = 0;
+ 216   2                  LED2 = 1;
+ 217   2                  LED3 = 1;
+ 218   2                  break;
+ 219   2              case MODE_TIMER:
+ 220   2                  LED1 = 1;
+ 221   2                  LED2 = 0;
+ 222   2                  LED3 = 1;
+ 223   2                  break;
+ 224   2              case MODE_COUNTER:
+ 225   2                  LED1 = 1;
+ 226   2                  LED2 = 1;
+ 227   2                  LED3 = 0;
+ 228   2                  break;
+ 229   2              case MODE_DOWNLOAD:
+ 230   2                  LED1 = 0;
+ 231   2                  LED1 = 0;
+ 232   2                  LED1 = 0;
+ 233   2                  break;
+ 234   2              default:
+ 235   2                  break;
+ 236   2          }
+ 237   1          return;
+C51 COMPILER V7.20   LED_MATRIX                                                            11/28/2010 23:05:34 PAGE 5   
+
+ 238   1      }
+ 239          
+ 240          /* 外部中断0 */
+ 241          void ExtInt0(void) interrupt 0
+ 242          {
+ 243   1          /* 循环切换模式 */
+ 244   1          if (++currentMode == MODE_COUNT)
+ 245   1          {
+ 246   2              currentMode= MODE_STATIC;
+ 247   2          }
+ 248   1          ModeState(currentMode);
+ 249   1      
+ 250   1          return;
+ 251   1      }
+ 252          
+ 253          
+ 254          /********************************************************************/
+ 255          /* 功能函数 */
+ 256          void SwitchTimeUnit(bit goRight)
+ 257          {
+ 258   1          if (goRight)
+ 259   1          {
+ 260   2              g_CurrentTimeUnit++;
+ 261   2              if (UNITCOUNT == g_CurrentTimeUnit)
+ 262   2              {
+ 263   3                  g_CurrentTimeUnit = HOUR;
+ 264   3              }
+ 265   2          }
+ 266   1          else
+ 267   1          {
+ 268   2              if (HOUR == g_CurrentTimeUnit)
+ 269   2              {
+ 270   3      
+ 271   3                  g_CurrentTimeUnit = UNITCOUNT;
+ 272   3              }
+ 273   2              g_CurrentTimeUnit--;
+ 274   2          }    
+ 275   1      
+ 276   1          return;
+ 277   1      }
+ 278          
+ 279          void AddCurUnitTime(bit incCurUnit)
+ 280          {
+ 281   1          if (incCurUnit)
+ 282   1          {
+ 283   2              switch (g_CurrentTimeUnit)
+ 284   2              {
+ 285   3                  case HOUR:
+ 286   3                      editingTime.hour++;
+ 287   3                      if (TIME_24 == editingTime.hour)
+ 288   3                      {
+ 289   4                          editingTime.hour= 0;
+ 290   4                      }
+ 291   3                      break;
+ 292   3                  case MINUTE:
+ 293   3                      editingTime.minute++;
+ 294   3                      if (TIME_60 == editingTime.minute)
+ 295   3                      {
+ 296   4                          editingTime.minute = 0;
+ 297   4                      }
+ 298   3                      break;
+ 299   3                  case SECOND:
+C51 COMPILER V7.20   LED_MATRIX                                                            11/28/2010 23:05:34 PAGE 6   
+
+ 300   3                      editingTime.second++;
+ 301   3                      if (TIME_60 == editingTime.second)
+ 302   3                      {
+ 303   4                          editingTime.second = 0;
+ 304   4                      }
+ 305   3                      break;
+ 306   3                  default:
+ 307   3                      break;
+ 308   3              }
+ 309   2          }
+ 310   1          else
+ 311   1          {
+ 312   2              switch (g_CurrentTimeUnit)
+ 313   2              {
+ 314   3                  case HOUR:
+ 315   3                      if (TIME_0 == editingTime.hour)
+ 316   3                      {
+ 317   4                          editingTime.hour= TIME_24 - 1;
+ 318   4                      }
+ 319   3                      editingTime.hour--;
+ 320   3                      break;
+ 321   3                  case MINUTE:
+ 322   3                      if (TIME_0 == editingTime.minute)
+ 323   3                      {
+ 324   4                          editingTime.minute= TIME_60 - 1;
+ 325   4                      }
+ 326   3                      editingTime.minute--;
+ 327   3                      break;
+ 328   3                  case SECOND:
+ 329   3                      if (TIME_0 == editingTime.second)
+ 330   3                      {
+ 331   4                          editingTime.second = TIME_60 - 1;
+ 332   4                      }
+ 333   3                      editingTime.second--;
+ 334   3                      break;
+ 335   3                  default:
+ 336   3                      break;
+ 337   3              }
+ 338   2          }
+ 339   1      
+ 340   1          return;
+ 341   1      }
+ 342          
+ 343          /*
+ 344           * 按键事件
+ 345           */
+ 346          void KeyEvent(byte curKey, EKeyEventKind event)
+ 347          {
+ 348   1          switch (curKey)
+ 349   1          {
+ 350   2              case KEY_YES:  //KEY_SAVE
+ 351   2                  if (isEditing)
+ 352   2                  {
+ 353   3                      isEditing= 0;       /* 显存数据实时更新，直接改变状态即可 */
+ 354   3                  }
+ 355   2                  else
+ 356   2                  {
+ 357   3                      /* 将当前显存写入EE，为取消操作做准备 */
+ 358   3                      isEditing= 1;
+ 359   3                  }
+ 360   2                  break;
+ 361   2              case KEY_NO:  //KEY_CANCEL
+C51 COMPILER V7.20   LED_MATRIX                                                            11/28/2010 23:05:34 PAGE 7   
+
+ 362   2                  if (isEditing)
+ 363   2                  {
+ 364   3                      /* 取回写入EE的显存数据 */
+ 365   3                      isEditing= 0;
+ 366   3                  }
+ 367   2                  break;
+ 368   2              case KEY_OK:
+ 369   2                  if (MODE_STATIC == currentMode)
+ 370   2                  {
+ 371   3                      if (drawingLine)
+ 372   3                      {
+ 373   4                          drawingLine = 0;
+ 374   4                          /* 直接画线 */
+ 375   4                      }
+ 376   3                      else
+ 377   3                      {
+ 378   4                          drawingLine = 1;
+ 379   4                      }
+ 380   3                  }
+ 381   2                  else
+ 382   2                  {
+ 383   3                      //SwitchTimeUnit(/* 右移 */true);
+ 384   3                      isEditing = 0;  /* 退出编辑状态 */
+ 385   3                  }
+ 386   2                  break;
+ 387   2              case KEY_UP:
+ 388   2                  if (MODE_STATIC == currentMode)
+ 389   2                  {
+ 390   3                      //CurcorMove(/* 向上单位矢量 */) : AddCurUnitTime(/* 增加时间 */true);
+ 391   3                      AddCurUnitTime(TURE);
+ 392   3                  }
+ 393   2                  break;
+ 394   2              case KEY_DOWN:
+ 395   2                  if (MODE_STATIC == currentMode)
+ 396   2                  {
+ 397   3                      //CurcorMove(/* 向下单位矢量 */) : AddCurUnitTime(/* 减少时间 */false);
+ 398   3                      AddCurUnitTime(FALSE);
+ 399   3                  }
+ 400   2                  break;
+ 401   2              case KEY_LEFT:            
+ 402   2                  if (MODE_STATIC == currentMode)
+ 403   2                  {
+ 404   3                      //CurcorMove(/* 向左单位矢量 */) : SwitchTimeUnit(/* 左移 */false);
+ 405   3                      SwitchTimeUnit(FALSE);
+ 406   3                  }
+ 407   2                  break;
+ 408   2              case KEY_RIGHT:
+ 409   2                  if (MODE_STATIC == currentMode)
+ 410   2                  {
+ 411   3                      //CurcorMove(/* 向右单位矢量 */) : SwitchTimeUnit(/* 右移 */true);
+ 412   3                      SwitchTimeUnit(TURE);
+ 413   3                  }
+ 414   2                  break;
+ 415   2              default:
+ 416   2                  break;
+ 417   2          }
+ 418   1      
+ 419   1          return;
+ 420   1      }
+*** WARNING C280 IN LINE 346 OF ..\..\LED_MATRIX.C: 'event': unreferenced local variable
+ 421          
+ 422          
+C51 COMPILER V7.20   LED_MATRIX                                                            11/28/2010 23:05:34 PAGE 8   
+
+ 423          /*
+ 424           * 更新图像
+ 425           * 如果是编辑模式，绘制光标，画线时绘制直线
+ 426           */
+ 427          void UpdatePaint(void)
+ 428          {
+ 429   1          if (isEditing)
+ 430   1          {
+ 431   2              if (drawingLine)
+ 432   2              {
+ 433   3                  /* 使用取反清除前一条线 */
+ 434   3                  /* 使用取反模式画现在的线 */
+ 435   3                  preCursor= cursor;
+ 436   3              }
+ 437   2              else
+ 438   2              {
+ 439   3                  /* 使用取反清除前一光标 */
+ 440   3                  /* 使用取反绘制当前光标 */
+ 441   3                  preCursor= cursor;
+ 442   3              }
+ 443   2          }
+ 444   1      
+ 445   1          return;
+ 446   1      }
+ 447          
+ 448          /*
+ 449           * 更新时间函数
+ 450           * 如果是非编辑状态，绘制当前/剩余时间
+ 451           * 如果是编辑状态，绘制正在更改的时间
+ 452           */
+ 453          void UpdateTime()
+ 454          {
+ 455   1          byte disArray[LED_ROW];
+ 456   1              
+ 457   1              /* 转换时间为字符数组 */
+ 458   1          disArray[0] = (byte)editingTime.hour/10 + LIB_NUM_0;
+ 459   1          disArray[1] = (byte)editingTime.hour%10 + LIB_NUM_0;
+ 460   1          disArray[2] = LIB_COLON;
+ 461   1          disArray[3] = (byte)editingTime.minute/10 + LIB_NUM_0;
+ 462   1          disArray[4] = (byte)editingTime.minute%10 + LIB_NUM_0;
+ 463   1          disArray[5] = LIB_COLON;
+ 464   1          disArray[6] = (byte)editingTime.second/10 + LIB_NUM_0;
+ 465   1          disArray[7] = (byte)editingTime.second%10 + LIB_NUM_0;
+ 466   1      
+ 467   1              /* 将时间编码后写入显存 */
+ 468   1          PainterDrawString(disArray, LED_ROW, 0, 0, PM_COPY);
+ 469   1      
+ 470   1          return;
+ 471   1      }
+ 472          
+ 473          void UpdateCom()
+ 474          {
+ 475   1          byte length;
+ 476   1      
+ 477   1          /* 初始化打开串口下载 */
+ 478   1          SerialInit(graphData, LED_MEM, FALSE);
+*** WARNING C182 IN LINE 478 OF ..\..\LED_MATRIX.C: pointer to different objects
+ 479   1          
+ 480   1          /* 如果读取下载信息成功 */
+ 481   1          length = SerialRead(graphData, LED_MEM);
+*** WARNING C182 IN LINE 481 OF ..\..\LED_MATRIX.C: pointer to different objects
+ 482   1          if (length > 0)
+C51 COMPILER V7.20   LED_MATRIX                                                            11/28/2010 23:05:34 PAGE 9   
+
+ 483   1          {
+ 484   2              /* 关闭通讯 */
+ 485   2              /* 初始化显卡 */
+ 486   2              /* 设置模式为静态显示 */
+ 487   2              currentMode = MODE_STATIC;
+ 488   2      
+ 489   2              /* 调用EE的接口函数将数据存到EE */
+ 490   2          }
+ 491   1      
+ 492   1          /* 设置为串口模式0，打开串口传送数据 */
+ 493   1          SerialInit(graphData, LED_MEM, TURE);
+*** WARNING C182 IN LINE 493 OF ..\..\LED_MATRIX.C: pointer to different objects
+ 494   1      
+ 495   1          return;
+ 496   1      }
+ 497          
+ 498          /*
+ 499           * 更新所有
+ 500           * 需要更新时调用此函数，将更新需要的模式
+ 501           */
+ 502          void UpdateData(void)
+ 503          {
+ 504   1          switch (currentMode)
+ 505   1          {
+ 506   2              case MODE_STATIC:
+ 507   2                  /* 更新绘图 */
+ 508   2                  UpdatePaint();
+ 509   2                  break;
+ 510   2              case MODE_TIMER:    /* 与counter使用同一个更新函数 */
+ 511   2              case MODE_COUNTER:
+ 512   2                  /* 调用更新时间函数 */
+ 513   2                  UpdateTime();
+ 514   2                  break;
+ 515   2              case MODE_DOWNLOAD:
+ 516   2                  UpdateCom();
+ 517   2                  break;
+ 518   2              default:
+ 519   2                  /* 错误处理 */
+ 520   2                  break;
+ 521   2          }
+ 522   1      
+ 523   1          /* 进行接口映射，为显示做准备 */
+ 524   1          GDI_DisFormat();
+ 525   1      
+ 526   1          return;
+ 527   1      }
+ 528          
+ 529          void main()
+ 530          {
+ 531   1          uchar ucCurrentKey = KEY_NULL;
+ 532   1          EKeyEventKind eKeyEvent = Nothing;
+ 533   1          
+ 534   1          /* 调用本模块初始化函数 */
+ 535   1          InitMain();
+ 536   1      
+ 537   1          while (1)
+ 538   1          {
+ 539   2              /* 调用键盘驱动的读取当前按键到currentKey */
+ 540   2              KDI_GetCurrentKey(&ucCurrentKey, &eKeyEvent);
+ 541   2              if (KEY_NULL != ucCurrentKey)
+ 542   2              {
+ 543   3                  KeyEvent(ucCurrentKey, eKeyEvent);
+C51 COMPILER V7.20   LED_MATRIX                                                            11/28/2010 23:05:34 PAGE 10  
+
+ 544   3              }
+ 545   2      
+ 546   2              UpdateData();
+ 547   2          }
+ 548   1      
+ 549   1          return;
+ 550   1      }
+ 551          
+ 552          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    729    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     14      11
+   IDATA SIZE       =    128    ----
+   BIT SIZE         =      3       2
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  7 WARNING(S),  0 ERROR(S)

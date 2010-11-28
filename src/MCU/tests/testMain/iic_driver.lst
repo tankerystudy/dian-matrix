@@ -1,0 +1,135 @@
+C51 COMPILER V7.20   IIC_DRIVER                                                            11/28/2010 22:30:43 PAGE 1   
+
+
+C51 COMPILER V7.20, COMPILATION OF MODULE IIC_DRIVER
+OBJECT MODULE PLACED IN .\iic_driver.obj
+COMPILER INVOKED BY: D:\Program Files\seedclass\Keil\C51\BIN\C51.EXE ..\..\commondriver\iic_driver.c BROWSE DEBUG OBJECT
+                    -EXTEND PRINT(.\iic_driver.lst) OBJECT(.\iic_driver.obj)
+
+line level    source
+
+   1          #include <reg52.h>
+   2          #include "iic_driver.h"
+   3          
+   4          
+   5          static byte currentAddress;
+   6          static byte currentMode;
+   7          
+   8          
+   9          extern bit ASMI2COpen(byte);
+  10          extern bit ASMI2CWriteByte(byte);
+  11          extern void ASMI2CClose(void);
+  12          extern byte ASMI2CReadByte(void);
+  13          extern void ASMI2CSendACK(byte);
+  14          extern void ASMI2CReset(void);
+  15          
+  16          // open EEPROM at memAddr with specific mode
+  17          // default mode is: WRITE, PAGE0, ADDR00
+  18          // using | to change the mode
+  19          // return if open success
+  20          bit I2COpen(const byte memAddr, const byte mode)
+  21          {
+  22   1          byte i;
+  23   1      
+  24   1          currentMode = mode | 0xA0;              // add memorizer mode
+  25   1          currentAddress = memAddr;
+  26   1      
+  27   1          // wait to response
+  28   1          for(i= 0; i < IIC_OVERTIME; i++)
+  29   1          {
+  30   2              if (ASMI2COpen(0xfe & currentMode)) // force using write mode
+  31   2                  break;
+  32   2              sleep(1);
+  33   2          }
+  34   1          if (i == IIC_OVERTIME)
+  35   1              return 0;
+  36   1          if (!ASMI2CWriteByte(currentAddress))   // write addr to move here
+  37   1              return 0;
+  38   1          if ((currentMode & 0x01) == I2CREAD)    // if is read, reopen as read
+  39   1              if (!ASMI2COpen(currentMode))
+  40   1                  return 0;
+  41   1      
+  42   1          return 1;    // reopen
+  43   1      }
+  44          
+  45          // write specific length byte from dataAddr
+  46          // returns:
+  47          //      0: write succes
+  48          //      1: write byte failed
+  49          //      2: page write overtime
+  50          //      3: insufficient memory space (including the PAGE setting
+  51          //          (A2A1P0) during Device Addressing)
+  52          byte I2CWrite(const byte* dataAddr, const byte length)
+  53          {
+  54   1          byte i;
+C51 COMPILER V7.20   IIC_DRIVER                                                            11/28/2010 22:30:43 PAGE 2   
+
+  55   1      
+  56   1          if ((~currentAddress & 0xff)+1 < length)       // whole address overflow
+  57   1              return 3;       // insufficient memory space
+  58   1      
+  59   1          for (i = 0; i < length; i++)    // Sequential Write
+  60   1          {
+  61   2              // if low 4 bit overflow, close and wait to save previews data
+  62   2              if ((currentAddress & 0x0f) == 0x00)
+  63   2              {
+  64   3                  // close and wait to response
+  65   3                  I2CClose();
+  66   3                  if (!I2COpen(currentAddress, I2CDEFAULT))
+  67   3                      return 2;
+  68   3              }
+  69   2      
+  70   2              if (!ASMI2CWriteByte(*(dataAddr + i)))
+  71   2                  return 1;
+  72   2              currentAddress++;
+  73   2          }
+  74   1      
+  75   1          return 0;   // normal
+  76   1      }
+  77          
+  78          // read specific length byte to dataAddr just one time
+  79          void I2CReadOneTime(byte* dataAddr, const byte length)
+  80          {
+  81   1          byte i;
+  82   1      
+  83   1          if (length == 0)
+  84   1              return;
+  85   1      
+  86   1          // Sequential Read, the last byte will be read alone
+  87   1          for (i = 0; i < length - 1; i++)
+  88   1          {
+  89   2              *(dataAddr+i) = ASMI2CReadByte();
+  90   2              ASMI2CSendACK(1);       // Send ACK
+  91   2          }
+  92   1          *(dataAddr+i) = ASMI2CReadByte();
+  93   1          ASMI2CSendACK(0);           // Send NOACK
+  94   1      }
+  95          
+  96          // close EEPROM
+  97          void I2CClose(void)
+  98          {
+  99   1          ASMI2CClose();
+ 100   1      }
+ 101          
+ 102          // reset EEPROM
+ 103          void I2CReset()
+ 104          {
+ 105   1          ASMI2CReset();
+ 106   1      }
+ 107          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    247    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      3      11
+   IDATA SIZE       =   ----    ----
+C51 COMPILER V7.20   IIC_DRIVER                                                            11/28/2010 22:30:43 PAGE 3   
+
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

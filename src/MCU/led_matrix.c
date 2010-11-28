@@ -9,37 +9,29 @@
  */
 /* 通用驱动源文件放在commondriver文件夹中 */
 #include "commondriver/graphics_driver.h"
-#include "commondriver/iic_driver.h"
+//#include "commondriver/iic_driver.h"
 #include "commondriver/keyboard_driver.h"
+#include "commondriver/serial_driver.h"
 #include "painter.h"
-#include "com_driver.h"
+//#include "com_driver.h"
 #include "time_manager.h"
-#include <其他文件>
-
 
 /********************************************************************/
 /* 全局变量定义 */
-enum Mode   {                   /* 模式种类 */
-    MODE_STATIC = 0,
-    MODE_TIMER,
-    MODE_COUNTER,
-    MODE_DOWNLOAD,
-    MODE_COUNT
-};
-
 idata byte graphData[LED_LINE][LED_ROW];  /* 显存数据 */
-enum Mode currentMode;          /* 当前模式 */
+eMode currentMode;          /* 当前模式 */
 bit isEditing;                  /* 是否正在修改状态 */
 bit needUpdate;                 /* 标志是否需要更新 */
 bit drawingLine;                /* 标志是否正在画线 */
 
-Location blinkTopLeft;          /* 闪烁区域的左上角 */
-Location blinkBottomRight;      /* 闪烁区域的右下角 */
-Location cursor;                /* 当前光标位置 */
-Location preCursor;             /* 先前光标位置 */
-Location firstPoint;            /* 直线的第一点 */
+uchar blinkTopLeft;          /* 闪烁区域的左上角 */
+uchar blinkBottomRight;      /* 闪烁区域的右下角 */
+uchar cursor;                /* 当前光标位置 */
+uchar preCursor;             /* 先前光标位置 */
+uchar firstPoint;            /* 直线的第一点 */
 
-stTime editingTime;         /* 正在修改的时间 */
+stTime editingTime;          /* 正在修改的时间 */
+e_TimeUnit g_CurrentTimeUnit;      /* 正在编辑的时间单元 */
 
 #define TIME_TIMER      1       /* 定义定时器时间 */
 /* 初始化定时器为2ms
@@ -58,10 +50,21 @@ stTime editingTime;         /* 正在修改的时间 */
 /* 初始化全局变量 */
 void InitGlobal(void)
 {
-    currentMode = MODE_COUNT;
+    currentMode = MODE_STATIC;
+    LED1 = 0;
+    LED2 = 1;
+    LED3 = 1;
+    
     isEditing = 0;
     needUpdate = 0;
     drawingLine = 0;
+
+    /* 时间 */
+    editingTime.hour = 0;
+    editingTime.minute = 0;
+    editingTime.second = 0;
+
+    g_CurrentTimeUnit = HOUR;
 
     return;
 }
@@ -99,7 +102,7 @@ void InitGraphMem(void)
     {
         for (x=0; x < LED_ROW; x++)
         {
-            graphData[y][x] = 0;
+            graphData[y][x] = 0xff;
         }
     }
     /* 从EE中读取点阵数据到内存 */
@@ -123,18 +126,39 @@ void InitMain(void)
     /* 初始化显存 */
     InitGraphMem();
     
-    /* 初始化显卡驱动 */
-    GDI_Init(graphData, LED_MEM);
-    
     /* 初始化键盘驱动 */
     KDI_Init();
     
+    /* 初始化显卡驱动 */
+    GDI_Init(graphData, LED_MEM);   
+
+    /* 初始化 */
+    PainterInit(graphData, LED_ROW);
+    
     /* 初始化时间管理模块 */
-    TMI_Init(graphData, LED_MEM, &editingTime);
+    TMI_Init(graphData, LED_MEM, &editingTime, &currentMode);
 
     return;
 }
 
+void Blink(void)
+{
+    switch (currentMode)
+    {
+        case MODE_STATIC:
+            /* 使光标闪烁 */
+            break;
+        case MODE_TIMER:    /* 与counter使用同一个更新函数 */
+        case MODE_COUNTER:
+            /* 使时间闪烁 */
+            break;
+        default:
+            /* 无闪烁 */
+            break;
+    }
+
+    return;
+}
 
 /********************************************************************/
 /* 中断函数 */
@@ -183,17 +207,23 @@ void OnTimer(void) interrupt 1
 }
 
 /* 用LED灯指示当前工作状态 */
-static void ModeState(enum Mode mode)
+static void ModeState(eMode mode)
 {
     switch (mode)
     {
         case MODE_STATIC:
             LED1 = 0;
+            LED2 = 1;
+            LED3 = 1;
             break;
         case MODE_TIMER:
+            LED1 = 1;
             LED2 = 0;
+            LED3 = 1;
             break;
         case MODE_COUNTER:
+            LED1 = 1;
+            LED2 = 1;
             LED3 = 0;
             break;
         case MODE_DOWNLOAD:
@@ -223,45 +253,97 @@ void ExtInt0(void) interrupt 0
 
 /********************************************************************/
 /* 功能函数 */
-
-void Blink(void)
-{
-    switch (currentMode)
-    {
-        case MODE_STATIC:
-            /* 使光标闪烁 */
-            break;
-        case MODE_TIMER:    /* 与counter使用同一个更新函数 */
-        case MODE_COUNTER:
-            /* 使时间闪烁 */
-            break;
-        default:
-            /* 无闪烁 */
-            break;
-    }
-
-    return;
-}
-
 void SwitchTimeUnit(bit goRight)
 {
+    if (goRight)
+    {
+        g_CurrentTimeUnit++;
+        if (UNITCOUNT == g_CurrentTimeUnit)
+        {
+            g_CurrentTimeUnit = HOUR;
+        }
+    }
+    else
+    {
+        if (HOUR == g_CurrentTimeUnit)
+        {
+
+            g_CurrentTimeUnit = UNITCOUNT;
+        }
+        g_CurrentTimeUnit--;
+    }    
+
     return;
 }
 
 void AddCurUnitTime(bit incCurUnit)
 {
-    return;
-}
+    if (incCurUnit)
+    {
+        switch (g_CurrentTimeUnit)
+        {
+            case HOUR:
+                editingTime.hour++;
+                if (TIME_24 == editingTime.hour)
+                {
+                    editingTime.hour= 0;
+                }
+                break;
+            case MINUTE:
+                editingTime.minute++;
+                if (TIME_60 == editingTime.minute)
+                {
+                    editingTime.minute = 0;
+                }
+                break;
+            case SECOND:
+                editingTime.second++;
+                if (TIME_60 == editingTime.second)
+                {
+                    editingTime.second = 0;
+                }
+                break;
+            default:
+                break;
+        }
+    }
+    else
+    {
+        switch (g_CurrentTimeUnit)
+        {
+            case HOUR:
+                if (TIME_0 == editingTime.hour)
+                {
+                    editingTime.hour= TIME_24 - 1;
+                }
+                editingTime.hour--;
+                break;
+            case MINUTE:
+                if (TIME_0 == editingTime.minute)
+                {
+                    editingTime.minute= TIME_60 - 1;
+                }
+                editingTime.minute--;
+                break;
+            case SECOND:
+                if (TIME_0 == editingTime.second)
+                {
+                    editingTime.second = TIME_60 - 1;
+                }
+                editingTime.second--;
+                break;
+            default:
+                break;
+        }
+    }
 
-void CurcorMove(byte direction)
-{
     return;
 }
 
 /*
  * 按键事件
  */
-void KeyEvent(byte curKey, EnumKeyEventKind event)
+void KeyEvent(byte curKey, EKeyEventKind event)
 {
     switch (curKey)
     {
@@ -298,31 +380,36 @@ void KeyEvent(byte curKey, EnumKeyEventKind event)
             }
             else
             {
-                SwitchTimeUnit(/* 右移 */true);
+                //SwitchTimeUnit(/* 右移 */true);
+                isEditing = 0;  /* 退出编辑状态 */
             }
             break;
         case KEY_UP:
             if (MODE_STATIC == currentMode)
             {
-                CurcorMove(/* 向上单位矢量 */) : AddCurUnitTime(/* 增加时间 */true);
+                //CurcorMove(/* 向上单位矢量 */) : AddCurUnitTime(/* 增加时间 */true);
+                AddCurUnitTime(TURE);
             }
             break;
         case KEY_DOWN:
             if (MODE_STATIC == currentMode)
             {
-                CurcorMove(/* 向下单位矢量 */) : AddCurUnitTime(/* 减少时间 */false);
+                //CurcorMove(/* 向下单位矢量 */) : AddCurUnitTime(/* 减少时间 */false);
+                AddCurUnitTime(FALSE);
             }
             break;
         case KEY_LEFT:            
             if (MODE_STATIC == currentMode)
             {
-                CurcorMove(/* 向左单位矢量 */) : SwitchTimeUnit(/* 左移 */false);
+                //CurcorMove(/* 向左单位矢量 */) : SwitchTimeUnit(/* 左移 */false);
+                SwitchTimeUnit(FALSE);
             }
             break;
         case KEY_RIGHT:
             if (MODE_STATIC == currentMode)
             {
-                CurcorMove(/* 向右单位矢量 */) : SwitchTimeUnit(/* 右移 */true);
+                //CurcorMove(/* 向右单位矢量 */) : SwitchTimeUnit(/* 右移 */true);
+                SwitchTimeUnit(TURE);
             }
             break;
         default:
@@ -337,11 +424,11 @@ void KeyEvent(byte curKey, EnumKeyEventKind event)
  * 更新图像
  * 如果是编辑模式，绘制光标，画线时绘制直线
  */
-void UpdatePaint()
+void UpdatePaint(void)
 {
     if (isEditing)
     {
-        if (/* 在画直线 */)
+        if (drawingLine)
         {
             /* 使用取反清除前一条线 */
             /* 使用取反模式画现在的线 */
@@ -365,32 +452,20 @@ void UpdatePaint()
  */
 void UpdateTime()
 {
-    DisChar disArray[8];
-
-    if (!isEditing)
-    {
-        if (currentMode == MODE_TIMER)
-        {
-            TMI_GetCurrentTime(&editingTime);
-        }
-        else
-        {
-            TMI_GetRemainTime(&editingTime);
-        }
-    }
+    byte disArray[LED_ROW];
 	
 	/* 转换时间为字符数组 */
-    disArray[0] = (byte)editingTime.hour/10 + DIS_NUM0;
-    disArray[1] = (byte)editingTime.hour%10 + DIS_NUM0;
-    disArray[2] = DIS_COLON;
-    disArray[3] = (byte)editingTime.minute/10 + DIS_NUM0;
-    disArray[4] = (byte)editingTime.minute%10 + DIS_NUM0;
-    disArray[5] = DIS_COLON;
-    disArray[6] = (byte)editingTime.second/10 + DIS_NUM0;
-    disArray[7] = (byte)editingTime.second%10 + DIS_NUM0;
+    disArray[0] = (byte)editingTime.hour/10 + LIB_NUM_0;
+    disArray[1] = (byte)editingTime.hour%10 + LIB_NUM_0;
+    disArray[2] = LIB_COLON;
+    disArray[3] = (byte)editingTime.minute/10 + LIB_NUM_0;
+    disArray[4] = (byte)editingTime.minute%10 + LIB_NUM_0;
+    disArray[5] = LIB_COLON;
+    disArray[6] = (byte)editingTime.second/10 + LIB_NUM_0;
+    disArray[7] = (byte)editingTime.second%10 + LIB_NUM_0;
 
-	/* 绘制 */
-    GDI_DrawCharArray(disArray);
+	/* 将时间编码后写入显存 */
+    PainterDrawString(disArray, LED_ROW, 0, 0, PM_COPY);
 
     return;
 }
@@ -400,10 +475,10 @@ void UpdateCom()
     byte length;
 
     /* 初始化打开串口下载 */
-    SerialInit(graphData, (LED_LINE * LED_ROW), 0);
+    SerialInit(graphData, LED_MEM, FALSE);
     
     /* 如果读取下载信息成功 */
-    length = SerialRead(graphData, (LED_LINE * LED_ROW));
+    length = SerialRead(graphData, LED_MEM);
     if (length > 0)
     {
         /* 关闭通讯 */
@@ -415,7 +490,7 @@ void UpdateCom()
     }
 
     /* 设置为串口模式0，打开串口传送数据 */
-    SerialInit(graphData, (LED_LINE * LED_ROW), 0);
+    SerialInit(graphData, LED_MEM, TURE);
 
     return;
 }
@@ -444,6 +519,9 @@ void UpdateData(void)
             /* 错误处理 */
             break;
     }
+
+    /* 进行接口映射，为显示做准备 */
+    GDI_DisFormat();
 
     return;
 }

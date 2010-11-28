@@ -1,5 +1,6 @@
 #include <reg52.h>
-#include "Serial_driver.h"
+#include "common_def.h"
+#include "serial_driver.h"
 
 /* definition of functions declared in Serial_driver.h */
 static idata byte *g_SerialBuf;
@@ -93,7 +94,7 @@ void SerialInit(byte *pucSerialMem, byte ucMemLen, bit isMode0)
         RI = 0;
         ES = 1;
     }
-	LED3 = 0;
+
 	return;
 }
 

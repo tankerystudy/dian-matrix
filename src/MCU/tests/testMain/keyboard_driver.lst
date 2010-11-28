@@ -1,0 +1,301 @@
+C51 COMPILER V7.20   KEYBOARD_DRIVER                                                       11/28/2010 22:47:38 PAGE 1   
+
+
+C51 COMPILER V7.20, COMPILATION OF MODULE KEYBOARD_DRIVER
+OBJECT MODULE PLACED IN .\keyboard_driver.obj
+COMPILER INVOKED BY: D:\Program Files\seedclass\Keil\C51\BIN\C51.EXE ..\..\commondriver\keyboard_driver.c BROWSE DEBUG O
+                    -BJECTEXTEND PRINT(.\keyboard_driver.lst) OBJECT(.\keyboard_driver.obj)
+
+line level    source
+
+   1          #include <reg52.h>
+   2          #include "common_def.h"
+   3          #include "keyboard_driver.h"
+   4          
+   5          
+   6          /* Global variable declaration */
+   7          bit bOneClick;
+   8          bit bLongPress;
+   9          bit bDoubleClick;
+  10          bit bIsInDoubleClick;
+  11          bit bAllowLongPress;
+  12          
+  13          byte ucBBtn;           /* possible clicked button before */
+  14          byte ucCBtn;           /* current possible clicked button */
+  15          byte ucLastPress;      /* last certain clicked button */
+  16          byte ucHighTime;
+  17          byte ucLowTime;
+  18          byte ucHighTimeBefore;
+  19          
+  20          static int CheckState(void);
+  21          static void JudgeNoChange(void);
+  22          static void JudgeChange(void);
+  23          static SKeyEvent GetKeyState(void);
+  24          
+  25          
+  26          /***************************************************************
+  27          Function:KDI_Init()
+  28          Discription:This function is used to initialize the vars used 
+  29                      in getting the status of the keyboard
+  30          ***************************************************************/
+  31          void KDI_Init(void)
+  32          {
+  33   1          ucBBtn = 0;
+  34   1          ucCBtn = 0;
+  35   1          ucLastPress = 0;  
+  36   1          ucHighTime = 0;
+  37   1          ucLowTime = 0;
+  38   1      
+  39   1          bOneClick = 0;
+  40   1          bLongPress = 0;
+  41   1          bDoubleClick = 0;
+  42   1          bIsInDoubleClick = 0;
+  43   1          bAllowLongPress = 0;
+  44   1      
+  45   1          return;
+  46   1      }
+  47          
+  48          /***************************************************************
+  49          Function:KDI_Scan()
+  50          Discription:Every time we get into the function,
+  51                      we check the keyboard status
+  52          ***************************************************************/
+  53          void KDI_Scan(void)
+  54          {
+C51 COMPILER V7.20   KEYBOARD_DRIVER                                                       11/28/2010 22:47:38 PAGE 2   
+
+  55   1          CheckState();
+  56   1          if(ucBBtn == ucCBtn)
+  57   1          {
+  58   2              JudgeNoChange();
+  59   2          }
+  60   1          else
+  61   1          {
+  62   2              JudgeChange();
+  63   2          }
+  64   1          
+  65   1          return;
+  66   1      }
+  67          
+  68          /***************************************************************
+  69          Function:KDI_GetCurrentKey()
+  70          Discription:The fuction is the main interface of the lib
+  71          ***************************************************************/
+  72          void KDI_GetCurrentKey(uchar *CurrentKey, EKeyEventKind *KeyEvent)
+  73          {
+  74   1          SKeyEvent KeyInfo;
+  75   1      
+  76   1          KeyInfo = GetKeyState();
+  77   1      
+  78   1          *CurrentKey = KeyInfo.ucKeyNum;
+  79   1          *KeyEvent = KeyInfo.eEventKind;
+  80   1      
+  81   1          return;    
+  82   1      }
+  83          
+  84          /***************************************************************
+  85          Function:   CheckState()
+  86          Discription:This function is used to check the button pressed 
+  87          Output:     The number of the pressed button ( 1 - 7 )
+  88                      return 0 means nothing pressed
+  89          ***************************************************************/
+  90          static int CheckState(void)
+  91          {
+  92   1          /* set the button pressed before */
+  93   1          ucBBtn = ucCBtn;
+  94   1      
+  95   1          switch (P0 | 0x80)  /* get the low 7 bits of P0 */
+  96   1          {
+  97   2              case 0xFD:  /* S1 */
+  98   2                  ucCBtn = KEY_LEFT;
+  99   2                  break;
+ 100   2              case 0xF7:  /* S2 */
+ 101   2                  ucCBtn = KEY_OK;
+ 102   2                  break;
+ 103   2              case 0xEF:  /* S3 */ 
+ 104   2                  ucCBtn = KEY_RIGHT;
+ 105   2                  break;        
+ 106   2              case 0xFE:  /* S4 */
+ 107   2                  ucCBtn = KEY_YES;
+ 108   2                  break;
+ 109   2              case 0xDF:  /* S5 */
+ 110   2                  ucCBtn = KEY_DOWN;
+ 111   2                  break;
+ 112   2              case 0xFB:  /* S6 */
+ 113   2                  ucCBtn = KEY_UP;
+ 114   2                  break;
+ 115   2              case 0xBF:  /* S7 */
+ 116   2                  ucCBtn = KEY_NO;
+C51 COMPILER V7.20   KEYBOARD_DRIVER                                                       11/28/2010 22:47:38 PAGE 3   
+
+ 117   2                  break;
+ 118   2              default:  /* no button clicked */
+ 119   2                  ucCBtn = KEY_NULL;
+ 120   2                  break;
+ 121   2          }
+ 122   1          
+ 123   1          return 0;
+ 124   1      }
+ 125          
+ 126          /***************************************************************
+ 127          Function:JudgeNoChange()
+ 128          Discription:Every time we find that the former key and the 
+ 129                      current key are the same, we get in this function.
+ 130          ***************************************************************/
+ 131          static void JudgeNoChange(void)
+ 132          {
+ 133   1          //relax
+ 134   1          if(ucCBtn == KEY_NULL)
+ 135   1          {        
+ 136   2              if(ucHighTime == 0)
+ 137   2              {            
+ 138   3                  if(ucLowTime == 0)
+ 139   3                  {
+ 140   4                      ucHighTimeBefore = ucHighTime;
+ 141   4                      return;
+ 142   4                  }
+ 143   3                  if(bIsInDoubleClick)
+ 144   3                  {
+ 145   4                      ucHighTimeBefore = ucHighTime;
+ 146   4                      return;
+ 147   4                  }
+ 148   3                  if(ucHighTimeBefore == 1)
+ 149   3                  {
+ 150   4                      bOneClick = 1;
+ 151   4                      ucHighTimeBefore = ucHighTime;
+ 152   4                  }
+ 153   3              }
+ 154   2              else
+ 155   2              {
+ 156   3                  ucHighTimeBefore = ucHighTime;
+ 157   3                  ucHighTime--;
+ 158   3              }
+ 159   2          }
+ 160   1          //hold
+ 161   1          else
+ 162   1          {
+ 163   2              if(ucLowTime == 0)
+ 164   2              {
+ 165   3                  bLongPress = 1;
+ 166   3              }
+ 167   2              else
+ 168   2              {
+ 169   3                  ucLowTime--;            
+ 170   3              }
+ 171   2          }   
+ 172   1      
+ 173   1          return;
+ 174   1      }
+ 175          
+ 176          
+ 177          /***************************************************************
+ 178          Function:JudgeChange()
+C51 COMPILER V7.20   KEYBOARD_DRIVER                                                       11/28/2010 22:47:38 PAGE 4   
+
+ 179          Discription:Every time we find that the former key and the 
+ 180                      current key are the same, we get in this function.
+ 181          ***************************************************************/
+ 182          static void JudgeChange(void)
+ 183          {
+ 184   1          bit bTempInDoubleClick;
+ 185   1          if(ucCBtn == KEY_NULL)
+ 186   1          {
+ 187   2              ucLastPress = ucBBtn;
+ 188   2              ucHighTime = 10;
+ 189   2          }
+ 190   1          else
+ 191   1          {
+ 192   2              bTempInDoubleClick = bIsInDoubleClick;
+ 193   2              bIsInDoubleClick = 0;
+ 194   2              bAllowLongPress = 1;
+ 195   2              if(ucLowTime == 0)
+ 196   2              {
+ 197   3                  ucLowTime = 100;
+ 198   3                  return;
+ 199   3              }
+ 200   2              else
+ 201   2              {
+ 202   3                   ucLowTime = 100;
+ 203   3              }
+ 204   2              if(ucHighTime == 0)
+ 205   2              {
+ 206   3                  return;
+ 207   3              }
+ 208   2              if(ucCBtn == ucLastPress)
+ 209   2              {
+ 210   3                  if(bTempInDoubleClick == 1)
+ 211   3                  {
+ 212   4                      return;
+ 213   4                  }
+ 214   3                  bIsInDoubleClick = 1;
+ 215   3                  bDoubleClick = 1;
+ 216   3              }
+ 217   2              else
+ 218   2              {
+ 219   3                  bOneClick = 1;
+ 220   3              }
+ 221   2          }
+ 222   1      
+ 223   1          return;
+ 224   1      }
+ 225          
+ 226          /***************************************************************
+ 227          Function:GetKeyState()
+ 228          Discription:The fuction is the main interface of the lib
+ 229          ***************************************************************/
+ 230          static SKeyEvent GetKeyState(void)
+ 231          {
+ 232   1          SKeyEvent returnValue;
+ 233   1          if(bOneClick == 1)
+ 234   1          {
+ 235   2              bOneClick = 0;
+ 236   2              returnValue.eEventKind = SingleClick;        
+ 237   2              returnValue.ucKeyNum = ucLastPress;
+ 238   2          }
+ 239   1          else if(bDoubleClick == 1)
+ 240   1          {
+C51 COMPILER V7.20   KEYBOARD_DRIVER                                                       11/28/2010 22:47:38 PAGE 5   
+
+ 241   2              bDoubleClick = 0;
+ 242   2              returnValue.eEventKind = DoubleClick;
+ 243   2              returnValue.ucKeyNum = ucLastPress;
+ 244   2          }
+ 245   1          else if(bLongPress == 1)
+ 246   1          {        
+ 247   2              bLongPress = 0;
+ 248   2              if(!bAllowLongPress)
+ 249   2              {
+ 250   3                  returnValue.eEventKind = Nothing;
+ 251   3                  return returnValue;
+ 252   3              }
+ 253   2              returnValue.eEventKind = LongPress;  
+ 254   2              returnValue.ucKeyNum = ucCBtn;
+ 255   2              bAllowLongPress = 0;
+ 256   2          }
+ 257   1          else
+ 258   1          {
+ 259   2              returnValue.eEventKind = Nothing;
+ 260   2              returnValue.ucKeyNum = 0xff;
+ 261   2          }
+ 262   1      
+ 263   1          //if (returnValue.ucKeyNum == 10)     // make key 10 to key 0
+ 264   1          //    returnValue.ucKeyNum= 0;
+ 265   1      
+ 266   1          return returnValue;
+ 267   1      }
+ 268          
+ 269          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    313    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      6      10
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      5       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

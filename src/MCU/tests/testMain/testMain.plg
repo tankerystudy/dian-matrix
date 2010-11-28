@@ -1,0 +1,48 @@
+<html>
+<body>
+<pre>
+<h1>礦ision2 Build Log</h1>
+<h2>Project:</h2>
+E:\Class\GRADE_THREE\三上\微机原理\课设\svn_led\src\MCU\tests\testMain\testMain.uv2
+Project File Date:  11/28/2010
+
+<h2>Output:</h2>
+Build target 'Target 1'
+compiling led_matrix.c...
+..\..\LED_MATRIX.C(130): warning C182: pointer to different objects
+..\..\LED_MATRIX.C(136): warning C182: pointer to different objects
+..\..\LED_MATRIX.C(343): warning C280: 'event': unreferenced local variable
+..\..\LED_MATRIX.C(475): warning C182: pointer to different objects
+..\..\LED_MATRIX.C(478): warning C182: pointer to different objects
+..\..\LED_MATRIX.C(490): warning C182: pointer to different objects
+linking...
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_PAINTERINIT?PAINTER
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?PAINTERCLEARSCREEN?PAINTER
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_PAINTERDRAWRECT?PAINTER
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_PAINTERDRAWCURSOR?PAINTER
+Program Size: data=238.2 xdata=0 code=3039
+creating hex file from "testMain"...
+"testMain" - 0 Error(s), 10 Warning(s).
+Build target 'Target 1'
+compiling led_matrix.c...
+..\..\LED_MATRIX.C(133): warning C182: pointer to different objects
+..\..\LED_MATRIX.C(136): warning C182: pointer to different objects
+..\..\LED_MATRIX.C(139): warning C182: pointer to different objects
+..\..\LED_MATRIX.C(346): warning C280: 'event': unreferenced local variable
+..\..\LED_MATRIX.C(478): warning C182: pointer to different objects
+..\..\LED_MATRIX.C(481): warning C182: pointer to different objects
+..\..\LED_MATRIX.C(493): warning C182: pointer to different objects
+linking...
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?PAINTERCLEARSCREEN?PAINTER
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_PAINTERDRAWRECT?PAINTER
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_PAINTERDRAWCURSOR?PAINTER
+Program Size: data=238.2 xdata=0 code=3050
+creating hex file from "testMain"...
+"testMain" - 0 Error(s), 10 Warning(s).

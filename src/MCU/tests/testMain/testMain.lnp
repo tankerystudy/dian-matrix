@@ -1,0 +1,10 @@
+"STARTUP.obj",
+".\led_matrix.obj",
+".\painter.obj",
+".\time_manager.obj",
+".\common_def.obj",
+".\graphics_driver.obj",
+".\keyboard_driver.obj",
+".\serial_driver.obj" 
+TO "testMain" 
+RAMSIZE(256) 

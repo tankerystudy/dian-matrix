@@ -1,0 +1,154 @@
+C51 COMPILER V7.20   PAINTER                                                               11/28/2010 22:47:30 PAGE 1   
+
+
+C51 COMPILER V7.20, COMPILATION OF MODULE PAINTER
+OBJECT MODULE PLACED IN .\painter.obj
+COMPILER INVOKED BY: D:\Program Files\seedclass\Keil\C51\BIN\C51.EXE ..\..\painter.c BROWSE DEBUG OBJECTEXTEND PRINT(.\p
+                    -ainter.lst) OBJECT(.\painter.obj)
+
+line level    source
+
+   1          #include "Painter.h"
+   2          
+   3          code byte const timeNumLib16[SYMBOL_COUNT][SCRN_HEIGHT] = 
+   4          {
+   5              {0xff,0xff,0xff,0x83,0x13,0x11,0x11,0x39,0x39,0x39,0x11,0x11,0x13,0x83,0xff,0xff},   // 0
+   6              {0xff,0xff,0xff,0xe7,0xc7,0x87,0x87,0xe7,0xe7,0xe7,0xe7,0xe7,0xe7,0xe7,0xff,0xff},   // 1
+   7              {0xff,0xff,0xff,0x83,0x11,0x19,0xf9,0xf1,0xe3,0xe3,0xc7,0x8f,0x1f,0x01,0xff,0xff},   // 2
+   8              {0xff,0xff,0xff,0x83,0x13,0x11,0xf1,0xf3,0xc3,0xf1,0xf9,0x11,0x11,0x83,0xff,0xff},   // 3
+   9              {0xff,0xff,0xff,0xe3,0xe3,0xc3,0xc3,0x83,0x03,0x23,0x01,0xe3,0xe3,0xe3,0xff,0xff},   // 4
+  10              {0xff,0xff,0xff,0x81,0x9f,0x1f,0x1f,0x03,0x11,0xf1,0xf9,0x11,0x11,0x83,0xff,0xff},   // 5
+  11              {0xff,0xff,0xff,0x83,0x91,0x11,0x3f,0x03,0x11,0x11,0x39,0x11,0x11,0x83,0xff,0xff},   // 6
+  12              {0xff,0xff,0xff,0x01,0xf1,0xe3,0xe3,0xc7,0xc7,0xcf,0x8f,0x8f,0x8f,0x8f,0xff,0xff},   // 7
+  13              {0xff,0xff,0xff,0x83,0x13,0x11,0x11,0x11,0x83,0x11,0x39,0x39,0x11,0x83,0xff,0xff},   // 8
+  14              {0xff,0xff,0xff,0x83,0x13,0x11,0x39,0x11,0x11,0x81,0xf9,0x11,0x13,0x83,0xff,0xff},   // 9
+  15              {0xff,0xff,0xff,0xff,0xc3,0xc3,0xc3,0xff,0xff,0xc3,0xc3,0xc3,0xff,0xff,0xff,0xff}    // :
+  16          };
+  17          
+  18          // graphics memory pointer.
+  19          static byte *g_pGraphMem;
+  20          static byte g_dataWidth;
+  21          
+  22          // must initial with graphics memory pointer.
+  23          void PainterInit(byte *mem, byte const width)
+  24          {
+  25   1          g_pGraphMem = mem;
+  26   1          g_dataWidth = width;
+  27   1      }
+  28          
+  29          // clear the screen, make all led off.
+  30          void PainterClearScreen()
+  31          {
+  32   1          ;
+  33   1      }
+  34          
+  35          // draw point using method.
+  36          void PainterDrawPoint(byte const x, byte const y, enum PaintMethod method)
+  37          {
+  38   1          byte *pcurChar= 0;
+  39   1          byte chCount= x >> 3;       // switch to the x-index of char, x >> 3 == x/8
+  40   1          byte restBit= x & 0x07;     // get low 3 bit, that is x % 8
+  41   1      
+  42   1          // get current char g_pGraphMem[chChount][y]
+  43   1          pcurChar = g_pGraphMem + (g_dataWidth*y + chCount);
+  44   1      
+  45   1          if (method == PM_COPY)
+  46   1          {
+  47   2              *pcurChar |= (0x80 >> restBit);
+  48   2          }
+  49   1          else
+  50   1          {
+  51   2              *pcurChar ^= (0x80 >> restBit);
+  52   2          }
+  53   1      }
+  54          
+C51 COMPILER V7.20   PAINTER                                                               11/28/2010 22:47:30 PAGE 2   
+
+  55          // using the paint method to draw a rect/line at top-left, button-right area.
+  56          void PainterDrawRect(byte const x0, byte const y0, byte const x1, byte const y1,
+  57                               enum PaintMethod method)
+  58          {
+  59   1          byte x= x1, y= y1;
+  60   1      
+  61   1          do
+  62   1          {
+  63   2              do
+  64   2              {
+  65   3                  PainterDrawPoint(x, y, method);
+  66   3              } while (--x != x0);
+  67   2          } while (--y != y0);
+  68   1      }
+  69          
+  70          void PainterDrawLine(byte const x0, byte const y0, byte const x1, byte const y1,
+  71                               enum PaintMethod method)
+  72          {
+  73   1          // notes: the dx & dy will be negative sometimes.
+  74   1          byte dx= x1 - x0;
+  75   1          byte dy= y1 - y0;
+  76   1          byte ds= dx > dy ? dx : dy;  // get max of dx & dy
+  77   1          byte i= ds;
+  78   1      
+  79   1          do
+  80   1          {
+  81   2              // the point should be calculate every time to reduce warp
+  82   2              PainterDrawPoint((x0*ds + dx*i)/ds, (y0*ds + dy*i)/ds, method);
+  83   2          } while (--i != 0);
+  84   1      }
+  85          
+  86          // draw a number place it's top-left conner on specific location.
+  87          // only support draw on char location now.
+  88          void PainterDrawNumber(byte const num, byte const x0, byte const y0,
+  89                                      enum PaintMethod method)
+  90          {
+  91   1          byte y;
+  92   1          byte x= x0 >> 3;    // calculate x using char axis.
+  93   1          //byte x = x0;
+  94   1          for (y = y0; y < 16 && y < SCRN_HEIGHT; y++)
+  95   1          {
+  96   2              unsigned char curChar = timeNumLib16[num][y];
+  97   2              if (method == PM_XOR)
+  98   2                  *(g_pGraphMem + (g_dataWidth*y + x))^= curChar;
+  99   2              else
+ 100   2                  *(g_pGraphMem + (g_dataWidth*y + x)) = curChar;
+ 101   2          }
+ 102   1      }
+ 103          
+ 104          // draw a number(time) string on specific location (top-left).
+ 105          void PainterDrawString(byte const num[], byte length, byte const x0, byte const y0,
+ 106                                 enum PaintMethod method)
+ 107          {
+ 108   1          byte x, y;
+ 109   1          byte i;
+ 110   1      
+ 111   1          //for (x = x0, y = y0, i= 0; x < SCRN_LENGTH && i < length; x++, i++)
+ 112   1          for (x = x0, y = y0, i= 0; x < SCRN_LENGTH && i < length; x += 8, i++)
+ 113   1          {
+ 114   2              PainterDrawNumber(num[i], x, y, method);
+ 115   2          }
+ 116   1      }
+C51 COMPILER V7.20   PAINTER                                                               11/28/2010 22:47:30 PAGE 3   
+
+ 117          
+ 118          // draw a cursor on specific location using NOT method.
+ 119          void PainterDrawCursor(byte const xc, byte const yc, byte size
+ 120                                      , enum PaintMethod method)
+ 121          {
+ 122   1          // draw horizontal line
+ 123   1          PainterDrawLine(xc - size, yc, xc + size, yc, method);
+ 124   1          // draw vertical line
+ 125   1          PainterDrawLine(xc, yc - size, xc, yc + size, method);
+ 126   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    477    ----
+   CONSTANT SIZE    =    176    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      4      42
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,46 @@
+C51 COMPILER V7.20   COMMON_DEF                                                            11/28/2010 22:47:34 PAGE 1   
+
+
+C51 COMPILER V7.20, COMPILATION OF MODULE COMMON_DEF
+OBJECT MODULE PLACED IN .\common_def.obj
+COMPILER INVOKED BY: D:\Program Files\seedclass\Keil\C51\BIN\C51.EXE ..\..\commondriver\common_def.c BROWSE DEBUG OBJECT
+                    -EXTEND PRINT(.\common_def.lst) OBJECT(.\common_def.obj)
+
+line level    source
+
+   1          /*
+   2           *  common_def.c
+   3           *
+   4           *  Common definition functions implementaion file.
+   5           *
+   6           *  Created by tankery.chen@gmail.com
+   7           *  Copyleft @ 2010 Coogle @ Dian Group
+   8           */
+   9          #include "common_def.h"
+  10          
+  11          
+  12          void sleep(int time)
+  13          {
+  14   1          byte i;
+  15   1          do
+  16   1          {
+  17   2              for (i= 0; i < 250; i++)
+  18   2                  ;
+  19   2          } while (--time != 0);
+  20   1          
+  21   1          return;
+  22   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     16    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

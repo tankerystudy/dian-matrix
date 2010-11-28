@@ -1,0 +1,297 @@
+C51 COMPILER V7.20   GRAPHICS_DRIVER                                                       11/28/2010 22:47:36 PAGE 1   
+
+
+C51 COMPILER V7.20, COMPILATION OF MODULE GRAPHICS_DRIVER
+OBJECT MODULE PLACED IN .\graphics_driver.obj
+COMPILER INVOKED BY: D:\Program Files\seedclass\Keil\C51\BIN\C51.EXE ..\..\commondriver\graphics_driver.c BROWSE DEBUG O
+                    -BJECTEXTEND PRINT(.\graphics_driver.lst) OBJECT(.\graphics_driver.obj)
+
+line level    source
+
+   1          #include <reg52.h>
+   2          #include "common_def.h"
+   3          #include "graphics_driver.h"
+   4          #include "serial_driver.h"
+   5          
+   6          /* 全局变量定义 */
+   7          /* 显示相关IO口定义 */
+   8          sbit LINE_A = P2^4;
+   9          sbit LINE_B = P2^3;
+  10          sbit LINE_C = P2^2;
+  11          sbit LINE_D = P2^1;
+  12          sbit LINE_EN = P2^0;
+  13          
+  14          /* 寄存器使能，高电平开启 */
+  15          sbit RES_EN = P1^4;
+  16          /* 寄存器时钟线控制 */
+  17          sbit RES_CLK = P3^3;
+  18          
+  19          /* 显存和显存大小 */
+  20          static idata uchar *g_bGraphMem;
+  21          static byte g_bGraphLen;
+  22          
+  23          /*
+  24          code byte g_CodeOfNum[LED_LINE][DIS_NUM] = 
+  25          {
+  26              // ０ // １ // ２ // ３ // ４ // ５ // ６ // ７ // ８ // ９ // ：
+  27              0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  28              0x07, 0x01, 0x07, 0x0F, 0x01, 0x1F, 0x07, 0x1F, 0x07, 0x07, 0x00,
+  29              0x08, 0x03, 0x08, 0x10, 0x02, 0x10, 0x08, 0x10, 0x08, 0x08, 0x00,
+  30              0x10, 0x05, 0x10, 0x10, 0x02, 0x10, 0x10, 0x10, 0x10, 0x10, 0x00,
+  31              0x10, 0x01, 0x10, 0x00, 0x02, 0x10, 0x10, 0x00, 0x10, 0x10, 0x00,
+  32              0x10, 0x01, 0x00, 0x00, 0x04, 0x10, 0x10, 0x00, 0x10, 0x10, 0x00,
+  33              0x10, 0x01, 0x00, 0x00, 0x04, 0x17, 0x10, 0x00, 0x08, 0x10, 0x00,
+  34              0x10, 0x01, 0x00, 0x01, 0x08, 0x18, 0x17, 0x00, 0x07, 0x08, 0x00,
+  35              0x10, 0x01, 0x03, 0x00, 0x08, 0x10, 0x18, 0x00, 0x08, 0x07, 0x00,
+  36              0x10, 0x01, 0x04, 0x00, 0x10, 0x00, 0x10, 0x01, 0x10, 0x00, 0x30,
+  37              0x10, 0x01, 0x08, 0x00, 0x20, 0x00, 0x10, 0x01, 0x10, 0x00, 0x30,
+  38              0x10, 0x01, 0x10, 0x00, 0x3F, 0x00, 0x10, 0x01, 0x10, 0x10, 0x00,
+  39              0x10, 0x01, 0x10, 0x10, 0x00, 0x10, 0x10, 0x02, 0x10, 0x10, 0x30,
+  40              0x08, 0x01, 0x10, 0x10, 0x00, 0x10, 0x08, 0x02, 0x08, 0x08, 0x30,
+  41              0x07, 0x07, 0x1F, 0x0F, 0x03, 0x0F, 0x07, 0x02, 0x07, 0x07, 0x00,
+  42              0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  43          };*/
+  44          
+  45          //static void LineRefresh(byte *bData, uchar iCurrentLine);
+  46          static void SetCurrentLine(uchar iCurrentLine);
+  47          //static void ByteMapping(byte *bData);
+  48          
+  49          
+  50          /* 显卡驱动 */
+  51          
+  52          /*******************************************************************************
+  53              Func Name: GDI_Init
+  54           Date Created: 2010-10-14
+C51 COMPILER V7.20   GRAPHICS_DRIVER                                                       11/28/2010 22:47:36 PAGE 2   
+
+  55                 Author: lihaitao
+  56            Description: 显示初始化。
+  57                         1.使能74HC38。
+  58                         2.初始化全局变量。
+  59                         3.设置串口模式0，用于传送数据。
+  60                  Input: 
+  61                 Output: 
+  62                 Return: 
+  63                Caution: 
+  64          --------------------------------------------------------------------------------
+  65            Modification History
+  66            DATE        NAME             DESCRIPTION
+  67          --------------------------------------------------------------------------------
+  68            YYYY-MM-DD
+  69            2010-11-10  Tankery          添加寄存器控制及寄存器时钟线控制
+  70          
+  71          *******************************************************************************/
+  72          void GDI_Init(byte *pbGraphMem, byte bGraphLen)
+  73          {
+  74   1          /* 1.使能74HC38。 */
+  75   1          LINE_EN = 0;    /* 低电平使能 */
+  76   1      
+  77   1          /* 2.设置寄存器 */
+  78   1          RES_EN = 1;     /* 高电平使能 */
+  79   1          RES_CLK = 0;    /* 释放时钟线控制权 */
+  80   1      
+  81   1          /* 3.获取显存。 */
+  82   1          g_bGraphMem = pbGraphMem;
+  83   1          g_bGraphLen = bGraphLen;
+  84   1      
+  85   1          /* 4.设置串口模式0，用于传送数据。 */
+  86   1          /* 调用串口驱动的接口 */
+  87   1          SerialInit(g_bGraphMem, g_bGraphLen, TURE);
+  88   1      
+  89   1          return;
+  90   1      }
+  91          
+  92          /*******************************************************************************
+  93              Func Name: GDI_ByteMapping
+  94           Date Created: 2010-10-14
+  95                 Author: lihaitao
+  96            Description: 按接口映射关系格式化显存。
+  97                         74HC595的接口映射关系表:
+  98                         QH -- 2
+  99                         QG -- 4
+ 100                         QF -- 1
+ 101                         QE -- 5
+ 102                         QD -- 7
+ 103                         QC -- 8
+ 104                         QB -- 6
+ 105                         QA -- 3
+ 106                  Input: INOUT bit *bData, 原始数据(8bits)
+ 107                 Output: INOUT bit *bData, 映射后的数据(8bits)
+ 108                 Return: void
+ 109                Caution: 无
+ 110          --------------------------------------------------------------------------------
+ 111            Modification History
+ 112            DATE        NAME             DESCRIPTION
+ 113          --------------------------------------------------------------------------------
+ 114            YYYY-MM-DD
+ 115          
+ 116          *******************************************************************************/
+C51 COMPILER V7.20   GRAPHICS_DRIVER                                                       11/28/2010 22:47:36 PAGE 3   
+
+ 117          void GDI_ByteMapping(byte *bData)
+ 118          {
+ 119   1          uchar i = 8;
+ 120   1          byte temp = 0;
+ 121   1          byte shiftdata = 0x01;
+ 122   1          /* maptable[i] represent the order of the element in the LEDmatrixArray order */
+ 123   1          /* {QH, QG, QF, QE, QD, QC, QB, QA} */
+ 124   1          byte maptable[8] = {6, 4, 7, 3, 1, 0, 2, 5};
+ 125   1      
+ 126   1          do 
+ 127   1          {
+ 128   2              CY = 0;
+ 129   2              temp = (temp << 1) + 
+ 130   2                     ((*bData & (shiftdata << maptable[i-1])) >> maptable[i-1]);
+ 131   2          } while (0 != --i);
+ 132   1          
+ 133   1          *bData = temp;
+ 134   1      
+ 135   1          return;
+ 136   1      }
+ 137          
+ 138          /*******************************************************************************
+ 139              Func Name: GDI_DisFormat
+ 140           Date Created: 2010-11-10
+ 141                 Author: Tankery
+ 142            Description: 调用ByteMapping函数，格式化所有显存数据
+ 143                  Input: none
+ 144                 Output: none
+ 145                 Return: void
+ 146                Caution: 无
+ 147          --------------------------------------------------------------------------------
+ 148            Modification History
+ 149            DATE        NAME             DESCRIPTION
+ 150          --------------------------------------------------------------------------------
+ 151            YYYY-MM-DD
+ 152          
+ 153          *******************************************************************************/
+ 154          void GDI_DisFormat(void)
+ 155          {
+ 156   1          int i;
+ 157   1      
+ 158   1          for (i=0; i < g_bGraphLen; i++)
+ 159   1          {
+ 160   2              GDI_ByteMapping(g_bGraphMem + i);
+ 161   2              }
+ 162   1      
+ 163   1          return;
+ 164   1      }
+ 165          
+ 166          
+ 167          /*******************************************************************************
+ 168              Func Name: GDI_Refresh
+ 169           Date Created: 2010-10-15
+ 170                 Author: lihaitao
+ 171            Description: 
+ 172                  Input: 
+ 173                 Output: 
+ 174                 Return: 
+ 175                Caution: 
+ 176          --------------------------------------------------------------------------------
+ 177            Modification History
+ 178            DATE        NAME             DESCRIPTION
+C51 COMPILER V7.20   GRAPHICS_DRIVER                                                       11/28/2010 22:47:36 PAGE 4   
+
+ 179          --------------------------------------------------------------------------------
+ 180            YYYY-MM-DD
+ 181          
+ 182          *******************************************************************************/
+ 183          void GDI_Refresh(void)
+ 184          {
+ 185   1          /* 当前显示的行数 */
+ 186   1          static byte currentLine = 0;
+ 187   1          /* 刷新一行 */
+ 188   1          LineRefresh((g_bGraphMem + currentLine * LED_ROW), currentLine);
+ 189   1      
+ 190   1          /* 更新当前行 */
+ 191   1          if (++currentLine == LED_LINE)
+ 192   1          {
+ 193   2              currentLine = 0;
+ 194   2          }
+ 195   1          
+ 196   1          return;
+ 197   1      }
+ 198          
+ 199          /*******************************************************************************
+ 200              Func Name: LineRefresh
+ 201           Date Created: 2010-10-14
+ 202                 Author: lihaitao
+ 203            Description: 刷新一行的数据。将控制一行LED的数据(8字节)通过串口模式0复用，
+ 204                         传到列线上。
+ 205                  Input: 
+ 206                 Output: 
+ 207                 Return: 
+ 208                Caution: 
+ 209          --------------------------------------------------------------------------------
+ 210            Modification History
+ 211            DATE        NAME             DESCRIPTION
+ 212          --------------------------------------------------------------------------------
+ 213            YYYY-MM-DD
+ 214            2010-11-10  Tankery          刷新前关闭显示屏，减少余光
+ 215            2010-11-10  Tankery          补偿一个时钟周期，使正确数据锁存
+ 216          
+ 217          *******************************************************************************/
+ 218          void LineRefresh(byte *bData, uchar iCurrentLine)
+ 219          {
+ 220   1          /* 关闭行显 */
+ 221   1          LINE_EN = 1;
+ 222   1      
+ 223   1          /* 通过串口发送数据到74HC595 */
+ 224   1          SerialWrite(bData, LED_ROW);
+ 225   1          /* 由于硬件设计失误，补偿一个时钟周期，使正确数据锁存 */
+ 226   1          RES_EN = 0;
+ 227   1          RES_CLK = 1;
+ 228   1          RES_EN = 1;
+ 229   1          RES_CLK = 0;
+ 230   1      
+ 231   1          /* 行选 */
+ 232   1          SetCurrentLine(iCurrentLine);
+ 233   1          
+ 234   1          /* 打开行显 */
+ 235   1          LINE_EN = 0;
+ 236   1      
+ 237   1          return;
+ 238   1      }
+ 239          
+ 240          /*******************************************************************************
+C51 COMPILER V7.20   GRAPHICS_DRIVER                                                       11/28/2010 22:47:36 PAGE 5   
+
+ 241              Func Name: SetCurrentLine
+ 242           Date Created: 2010-10-15
+ 243                 Author: lihaitao
+ 244            Description: 根据当前行，设置74HC138的行选信号。
+ 245                  Input: 
+ 246                 Output: 
+ 247                 Return: 
+ 248                Caution: 
+ 249          --------------------------------------------------------------------------------
+ 250            Modification History
+ 251            DATE        NAME             DESCRIPTION
+ 252          --------------------------------------------------------------------------------
+ 253            YYYY-MM-DD
+ 254          
+ 255          *******************************************************************************/
+ 256          static void SetCurrentLine(uchar iCurrentLine)
+ 257          {
+ 258   1          LINE_A = (iCurrentLine & 1) ? 1 : 0;
+ 259   1          LINE_B = (iCurrentLine & 2) ? 1 : 0;
+ 260   1          LINE_C = (iCurrentLine & 4) ? 1 : 0;
+ 261   1          LINE_D = (iCurrentLine & 8) ? 1 : 0;
+ 262   1      
+ 263   1          return;
+ 264   1      }
+ 265          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    264    ----
+   CONSTANT SIZE    =      8    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      2      17
+   IDATA SIZE       =      3    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

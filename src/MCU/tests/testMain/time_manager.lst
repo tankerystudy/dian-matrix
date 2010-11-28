@@ -1,0 +1,126 @@
+C51 COMPILER V7.20   TIME_MANAGER                                                          11/28/2010 22:47:32 PAGE 1   
+
+
+C51 COMPILER V7.20, COMPILATION OF MODULE TIME_MANAGER
+OBJECT MODULE PLACED IN .\time_manager.obj
+COMPILER INVOKED BY: D:\Program Files\seedclass\Keil\C51\BIN\C51.EXE ..\..\time_manager.c BROWSE DEBUG OBJECTEXTEND PRIN
+                    -T(.\time_manager.lst) OBJECT(.\time_manager.obj)
+
+line level    source
+
+   1          #include <reg52.h>
+   2          #include "commondriver/common_def.h"
+   3          #include "time_manager.h"
+   4          
+   5          /* 显存和显存大小 */
+   6          static idata uchar *g_bGraphMem;
+   7          static byte g_bGraphLen;
+   8          
+   9          /* 全局变量，记录系统时间 */
+  10          stTime *g_Time;
+  11          /* 记录系统状态 */
+  12          eMode *g_Mode;
+  13          
+  14          /* 时间模块的初始化 */
+  15          void TMI_Init(byte pbGraphMem[], byte bGraphLen, stTime *time, eMode *mode)
+  16          {
+  17   1          /* 1. 获取显存。 */
+  18   1          g_bGraphMem = pbGraphMem;
+  19   1          g_bGraphLen = bGraphLen;
+  20   1      
+  21   1          /* 2. 获取系统当前时间 */
+  22   1          g_Time = time;
+  23   1      
+  24   1          /* 2. 获取系统当前模式 */
+  25   1          g_Mode= mode;
+  26   1          
+  27   1          return;
+  28   1      }
+  29          
+  30          /* 将当前的系统时间刷新到屏幕上 */
+  31          void TMI_Refresh(void)
+  32          {    
+  33   1          /* 根据当前系统模式调用不同的刷新函数 */
+  34   1          if (g_Mode == MODE_TIMER)
+  35   1          {
+  36   2              TMI_GetCurrentTime(g_Time);
+  37   2          }
+  38   1          else
+  39   1          {
+  40   2              TMI_GetRemainTime(g_Time);
+  41   2      
+  42   2          }
+  43   1          
+  44   1          return;
+  45   1      }
+  46          
+  47          /* 时钟显示，系统时间增加1s */
+  48          void TMI_GetCurrentTime(stTime *time)
+  49          {
+  50   1          (time->second)++;
+  51   1          
+  52   1          if (TIME_60 == time->second)
+  53   1          {
+  54   2              time->second = 0;
+C51 COMPILER V7.20   TIME_MANAGER                                                          11/28/2010 22:47:32 PAGE 2   
+
+  55   2              time->minute++;
+  56   2      
+  57   2              if (TIME_60 == time->minute)
+  58   2              {
+  59   3                  time->minute = 0;
+  60   3                  time->hour++;
+  61   3      
+  62   3                  if (TIME_24 == time->hour)
+  63   3                  {
+  64   4                      time->second = 0;
+  65   4                      time->minute = 0;
+  66   4                      time->hour = 0;
+  67   4      
+  68   4                      BEEP = 0;  /* 午夜报时，蜂鸣器响 */
+  69   4                      sleep(1);
+  70   4                      BEEP = 1;
+  71   4                  }
+  72   3              }
+  73   2          }
+  74   1      
+  75   1          return;
+  76   1      }
+  77          
+  78          /* 倒计时，系统时间减少1s */
+  79          void TMI_GetRemainTime(stTime *time)
+  80          {    
+  81   1          if (TIME_0 == time->second)
+  82   1          {
+  83   2              if (TIME_0 == time->minute)
+  84   2              {
+  85   3                  if (TIME_0 == time->hour)
+  86   3                  {
+  87   4                      BEEP = 0;  /* 倒计时时间到，蜂鸣器响 */
+  88   4                      sleep(1);
+  89   4                      BEEP =1;
+  90   4                  }
+  91   3                  (time->hour)--;
+  92   3                  time->minute = TIME_60 -1;
+  93   3              }
+  94   2              (time->minute)--;
+  95   2              time->second = TIME_60 -1;
+  96   2          }
+  97   1          (time->second)--;
+  98   1      
+  99   1          return;
+ 100   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    233    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      7      13
+   IDATA SIZE       =      3    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

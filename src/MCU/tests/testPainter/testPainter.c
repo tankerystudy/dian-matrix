@@ -27,11 +27,6 @@
 
 byte idata g_SerialArray[LED_LINE][LED_ROW];
 
-
-/* µãÕó½áÊø */
-
-
-
 void main()
 {
     //uchar i;

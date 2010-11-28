@@ -2,8 +2,20 @@
 #define DIAN_MATRIX_COMDEF_H
 #include <reg52.h>
 
+#define TURE  1
+#define FALSE 0
+
 typedef unsigned char uchar;
 typedef uchar byte;
+
+typedef enum Mode 
+{                   /* 模式种类 */
+    MODE_STATIC = 0,
+    MODE_TIMER,
+    MODE_COUNTER,
+    MODE_DOWNLOAD,
+    MODE_COUNT
+}eMode;
 
 sfr T2MOD = 0xC9;           /* Timer2 的方式控制寄存器 */
 sfr16   RCAP2   = 0xCA;     /* timer2 initial count */
